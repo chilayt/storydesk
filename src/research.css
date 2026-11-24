@@ -1,0 +1,50 @@
+.research-tool {
+  padding: 20px;
+  min-width: 0;
+  color: var(--studio-ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.research-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 18px; }
+.research-heading h2 { margin: 0; font-size: 18px; }
+.research-tabs { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--studio-line); border-radius: 7px; background: var(--studio-ground); }
+.studio-shell .research-tabs button { min-height: 34px; border-color: transparent; background: transparent; }
+.studio-shell .research-tabs button[aria-pressed="true"] { background: var(--studio-paper); border-color: var(--studio-line); color: var(--studio-accent); }
+.research-search label, .research-fields label { color: var(--studio-ink); font-size: 13px; }
+.research-search > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.research-search input, .research-search button { min-height: 40px; }
+.research-meta { margin: 4px 0; color: var(--studio-muted); font-size: 12px; overflow-wrap: anywhere; }
+.research-results { margin-top: 18px; }
+.research-results-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding-bottom: 8px; }
+.research-results-heading > span { color: var(--studio-muted); font-size: 13px; }
+.research-result-list { padding: 0; margin: 0; list-style: none; }
+.research-result-list > li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; border-top: 1px solid var(--studio-line); padding: 12px 0; }
+.research-result-list input, .research-check input { width: 17px; height: 17px; margin: 4px 0 0; accent-color: var(--studio-accent); }
+.studio-shell button.research-link { border: 0; background: transparent; text-align: left; padding: 0; min-height: 24px; color: var(--studio-accent); white-space: normal; font-weight: 600; overflow-wrap: anywhere; }
+.studio-shell button.research-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.research-excerpt { margin: 5px 0 0; overflow-wrap: anywhere; }
+.research-result-list .research-excerpt { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.research-empty { padding: 14px 0; border-block: 1px solid var(--studio-line); }
+.research-empty p { margin: 3px 0; }
+.research-queue { display: grid; gap: 7px; }
+.studio-shell button.research-row { display: flex; justify-content: space-between; flex-wrap: wrap; min-width: 0; text-align: left; padding: 10px 12px; gap: 4px 10px; }
+.research-row strong { display: block; color: var(--studio-ink); overflow-wrap: anywhere; }
+.research-row small { display: block; color: var(--studio-muted); }
+.research-status { margin: 4px 0; color: var(--studio-accent); font-size: 12px; }
+.research-processed, .research-detail, .research-supplement { margin-top: 14px; }
+.research-fields { margin: 8px 0 0; border: 0; padding: 0; min-width: 0; }
+.research-fields input, .research-fields select, .research-fields textarea { width: 100%; }
+.research-fields textarea { resize: vertical; line-height: 1.75; min-height: 124px; }
+.research-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; }
+.research-chapters .research-field-grid { margin-top: 8px; }
+.research-evidence { margin-top: 20px; }
+.research-evidence h3, .research-detail > h3 { margin: 0 0 7px; font-size: 15px; overflow-wrap: anywhere; }
+.research-evidence .research-citation { padding: 11px 0; border-top: 1px solid var(--studio-line); }
+.research-citation blockquote, .research-adopted { margin: 8px 0; padding: 10px 12px; background: var(--studio-ground); border: 1px solid var(--studio-line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.research-review { border-top: 1px solid var(--studio-line); padding-top: 12px; }
+.research-check { display: flex; flex-direction: row; align-items: start; gap: 8px; color: var(--studio-ink); }
+.research-check input { flex-shrink: 0; }
+.research-tool summary { cursor: pointer; color: var(--studio-accent); }
+.research-tool details > summary { min-height: 27px; }
+@media (max-width: 1050px) { .research-tool { padding: 15px; } }
+@media (max-width: 480px) { .research-field-grid { grid-template-columns: minmax(0, 1fr); } }

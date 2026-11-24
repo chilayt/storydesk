@@ -1,0 +1,26 @@
+{
+  "light": {
+    "caption": "#e9ede9", "ground": "#f1f3ef", "paper": "#fcfdfa", "nav": "#e9ede8",
+    "ink": "#26302a", "muted": "#546057", "line": "#ccd4cd", "focus": "#426f5e",
+    "accent": "#315a4b", "accent-soft": "#e0ebe3", "accent-hover": "#244638", "primary-ink": "#ffffff",
+    "selection": "#cde3d5", "chat": "#fcfdfa", "bubble": "#eaf0eb", "composer": "#fcfdfa", "file": "#eff3ee"
+  },
+  "paper": {
+    "caption": "#eae0d0", "ground": "#f5eee2", "paper": "#fffcf5", "nav": "#ede4d5",
+    "ink": "#322b25", "muted": "#655849", "line": "#dbcfbd", "focus": "#905d32",
+    "accent": "#7e5427", "accent-soft": "#f5e9d7", "accent-hover": "#65441f", "primary-ink": "#ffffff",
+    "selection": "#edd8b9", "chat": "#fffcf5", "bubble": "#f4ead9", "composer": "#fffcf5", "file": "#f6efe2"
+  },
+  "dark": {
+    "caption": "#282026", "ground": "#1a161a", "paper": "#242024", "nav": "#211b20",
+    "ink": "#f1e7ed", "muted": "#c0aeb9", "line": "#4b3e47", "focus": "#d6a8c2",
+    "accent": "#e0b8ce", "accent-soft": "#3e2e38", "accent-hover": "#f2d1e3", "primary-ink": "#2c1f28",
+    "selection": "#503946", "chat": "#211b20", "bubble": "#382b34", "composer": "#282128", "file": "#30262e"
+  },
+  "charcoal": {
+    "caption": "#272727", "ground": "#191919", "paper": "#232323", "nav": "#1e1e1e",
+    "ink": "#ebebeb", "muted": "#b8b8b8", "line": "#414141", "focus": "#bdbdbd",
+    "accent": "#dddddd", "accent-soft": "#363636", "accent-hover": "#f4f4f4", "primary-ink": "#242424",
+    "selection": "#454545", "chat": "#1e1e1e", "bubble": "#2d2d2d", "composer": "#252525", "file": "#292929"
+  }
+}

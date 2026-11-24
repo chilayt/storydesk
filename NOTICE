@@ -1,0 +1,8 @@
+StoryDesk
+Copyright 2026 chilayt
+
+MemLayer 0.2.4 is included under Apache-2.0. See the MemLayer upstream
+notice and license in vendor/memlayer/ or the installed resources/memlayer/.
+
+The Windows distribution also includes Electron and the Python runtime.
+Their license notices accompany those components in the installation directory.

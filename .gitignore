@@ -1,0 +1,16 @@
+node_modules/
+dist/
+release-*/
+.build-runtime/
+.runtime*/
+test-output/
+*.log
+*.bak-*
+.env*
+*.encrypted
+*.sqlite*
+*.db
+*.db-shm
+*.db-wal
+__pycache__/
+_创作管理/

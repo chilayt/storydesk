@@ -1,0 +1,22 @@
+.source-changes > * + * { margin-top: 20px; }
+.source-changes h2 { font-size: 17px; margin: 0 0 12px; }
+.source-history > summary { font-weight: 600; cursor: pointer; }
+.source-changes h2 small, .source-history > summary small {
+  margin-left: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.source-review-row { padding: 14px 0; border-top: 1px solid var(--border); }
+.source-history[open] > summary { margin-bottom: 12px; }
+.source-review-row:last-child { padding-bottom: 0; }
+.source-review-row h3 { font-size: 14px; margin: 0 0 6px; overflow-wrap: anywhere; }
+.source-review-row p { margin: 6px 0; }
+.source-path { display: block; overflow-wrap: anywhere; }
+.source-review-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.source-review-form { max-width: 620px; margin-top: 12px; }
+.source-review-form label { display: grid; gap: 4px; margin-bottom: 8px; }
+.source-review-form button { margin-top: 6px; }
+.source-snapshot { margin-top: 10px; }
+.source-snapshot > summary { font-size: 12px; cursor: pointer; }
+.source-snapshot-text { max-height: 340px; overflow: auto; margin-top: 10px; }

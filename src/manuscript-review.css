@@ -1,0 +1,75 @@
+.manuscript-review { min-width: 0; padding: 16px; color: var(--studio-ink); }
+.manuscript-review-heading { display: flex; align-items: end; gap: 8px; }
+.manuscript-review-heading > div { min-width: 0; flex: 1 1 230px; }
+.manuscript-review-heading label { display: block; font-weight: 600; margin-bottom: 5px; }
+.manuscript-review-heading select { width: 100%; max-width: 100%; }
+.manuscript-review-heading > button { flex-shrink: 0; }
+.manuscript-review-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+.manuscript-review-progress { padding: 12px 0; }
+.manuscript-view-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 5px 0; border-bottom: 1px solid var(--studio-line); }
+.manuscript-view-tabs button[aria-pressed="true"] { color: var(--studio-accent); background: var(--studio-accent-soft); border-color: var(--studio-accent); }
+.manuscript-review-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 10px 0; color: var(--studio-muted); }
+.manuscript-filters { display: flex; gap: 5px; flex-wrap: wrap; padding: 6px 0; }
+.manuscript-filters button { min-height: 31px; padding: 4px 9px; }
+.manuscript-filters button[aria-pressed="true"] { background: var(--studio-accent-soft); color: var(--studio-accent); border-color: var(--studio-accent); }
+.manuscript-filters button span { margin-inline-start: 3px; font-variant-numeric: tabular-nums; }
+.manuscript-audit { padding: 8px 0; }
+.manuscript-audit summary { cursor: pointer; color: var(--studio-muted); }
+.manuscript-audit pre { max-height: 300px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.manuscript-issues { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--studio-line); }
+.manuscript-issue { border-bottom: 1px solid var(--studio-line); }
+button.manuscript-issue-heading { width: 100%; padding: 9px 4px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 8px; align-items: start; border: 0; background: transparent; text-align: left; }
+button.manuscript-issue-heading:hover { background: var(--studio-accent-soft); }
+.manuscript-issue-heading > span > strong { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.manuscript-issue-heading small { display: block; margin-top: 3px; color: var(--studio-muted); }
+.manuscript-severity { font-size: 12px; padding: 1px 5px; border-radius: 4px; color: var(--studio-muted); border: 1px solid currentColor; }
+.severity-hard { color: var(--danger); }
+.severity-research { color: var(--studio-accent); }
+.manuscript-issue-body { padding: 0 8px 12px; overflow-wrap: anywhere; }
+.manuscript-issue-body p, .manuscript-issue-body blockquote { margin: 7px 0; }
+.manuscript-issue-body blockquote { padding: 6px 10px; border-inline-start: 1px solid var(--studio-accent); white-space: pre-wrap; }
+.manuscript-basis { padding: 8px 0; border-top: 1px solid var(--studio-line); }
+.manuscript-basis > div { margin-top: 8px; }
+.manuscript-basis-source { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; }
+.manuscript-source-preview { margin: 8px 0; padding: 8px 9px; background: var(--studio-accent-soft); }
+.manuscript-source-preview pre, .manuscript-difference pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.manuscript-source-preview mark { color: var(--studio-paper); background: var(--studio-accent); }
+.manuscript-history { margin-top: 8px; }
+.manuscript-history-entry, .manuscript-legacy { border-bottom: 1px solid var(--studio-line); padding: 8px 0; }
+.manuscript-history-entry > summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px; align-items: baseline; cursor: pointer; }
+.manuscript-history-entry > summary span { color: var(--studio-accent); }
+.manuscript-history-entry > summary strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.manuscript-history-entry > summary small { color: var(--studio-muted); }
+.manuscript-history-detail { padding: 5px 8px; overflow-wrap: anywhere; }
+.manuscript-history-detail blockquote { margin: 6px 0; padding: 5px 8px; background: var(--studio-accent-soft); }
+.manuscript-legacy-row { display: flex; align-items: baseline; flex-wrap: wrap; justify-content: space-between; gap: 6px; }
+.manuscript-legacy summary { cursor: pointer; }
+.manuscript-basis small, .manuscript-sources small { color: var(--studio-muted); }
+.manuscript-sources { padding: 8px 0; display: grid; gap: 8px; }
+.manuscript-lookup-result { padding: 9px 10px; background: var(--studio-accent-soft); }
+.manuscript-lookup-result p { margin-bottom: 0; }
+.manuscript-research-excerpts { padding: 6px 0; }
+.manuscript-research-excerpts summary { cursor: pointer; }
+.manuscript-research-excerpts > div, .manuscript-alternatives article { border-top: 1px solid var(--studio-line); padding: 7px 0; }
+.manuscript-alternatives button { margin-top: 4px; }
+.manuscript-edit textarea { display: block; width: 100%; margin-top: 5px; }
+.manuscript-edit-status { display: grid; gap: 4px; margin-top: 6px; }
+.manuscript-review-footer { position: sticky; bottom: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; background: var(--studio-paper); border-top: 1px solid var(--studio-line); }
+.manuscript-review-footer small { display: block; color: var(--studio-muted); }
+.manuscript-review-footer button { flex-shrink: 0; }
+.studio-shell .modal .manuscript-edit-candidate :is(pre, textarea),
+.studio-shell .modal .diff-columns > div {
+  background: var(--studio-ground); color: var(--studio-ink); border-color: var(--studio-line);
+}
+.manuscript-edit-candidate { border-top: 1px solid var(--studio-line); padding: 8px 0; }
+.manuscript-edit-candidate textarea { display: block; width: 100%; }
+.manuscript-wording-group { padding-block: 8px; }
+.manuscript-wording-group summary { cursor: pointer; }
+.manuscript-issue { position: relative; }
+.manuscript-row-select { position: absolute; inset-inline-start: 3px; top: 9px; z-index: 1; margin: 0; }
+.manuscript-issue:has(.manuscript-row-select) > button.manuscript-issue-heading { padding-inline-start: 28px; }
+@media (max-width: 640px) {
+  .manuscript-review-heading { flex-wrap: wrap; }
+  .manuscript-history-entry > summary { grid-template-columns: auto minmax(0, 1fr); }
+  .manuscript-history-entry > summary small { grid-column: 2; }
+}

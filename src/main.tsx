@@ -1,0 +1,12 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import './studio-theme.css';
+import './styles.css';
+import './finishing.css';
+import './memory.css';
+import './obligations.css';
+import './cowriting.css';
+import './workspace-shell.css';
+import './tabbed-studio.css';
+createRoot(document.getElementById('root')!).render(<App/>);

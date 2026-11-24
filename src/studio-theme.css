@@ -1,0 +1,82 @@
+.studio-shell {
+  color-scheme: light;
+  color: var(--studio-ink);
+  background: var(--studio-ground);
+  --studio-error-ink: #9e2940;
+  --studio-error-bg: #fff0f2;
+  --studio-error-line: #db99a5;
+  --studio-warning-ink: #795017;
+  --studio-warning-bg: #fcf0dc;
+  --studio-warning-line: #bf9559;
+  --studio-success: #356449;
+  --studio-success-bg: #e5f0e6;
+  --studio-scrim: #17151480;
+  --studio-shadow-color: #16141422;
+  --studio-shadow: 0 3px 18px var(--studio-shadow-color);
+  --green: var(--studio-accent);
+  --green-dark: var(--studio-accent-hover);
+  --muted: var(--studio-muted);
+  --line: var(--studio-line);
+  --paper: var(--studio-paper);
+  --shadow: var(--studio-shadow);
+  --brand: var(--studio-accent);
+  --accent: var(--studio-accent);
+  --border: var(--studio-line);
+  --text: var(--studio-ink);
+  --text-muted: var(--studio-muted);
+  --danger: var(--studio-error-ink);
+}
+
+.studio-shell:is(.studio-dark, .studio-charcoal) {
+  color-scheme: dark;
+  --studio-error-ink: #ffb9c2;
+  --studio-error-bg: #41282e;
+  --studio-error-line: #925866;
+  --studio-warning-ink: #f1ce95;
+  --studio-warning-bg: #3e3123;
+  --studio-warning-line: #9b7b52;
+  --studio-success: #a7d3b2;
+  --studio-success-bg: #293c31;
+  --studio-scrim: #0b090bb0;
+  --studio-shadow-color: #09080966;
+}
+
+.studio-shell ::selection {
+  color: var(--studio-ink);
+  background: var(--studio-selection);
+}
+
+.studio-shell :is(input[type="checkbox"], input[type="radio"], input[type="range"], progress) {
+  accent-color: var(--studio-accent);
+}
+
+@supports (appearance: base-select) {
+  .studio-shell select:not([multiple], [size]),
+  .studio-shell select:not([multiple], [size])::picker(select) {
+    appearance: base-select;
+  }
+
+  .studio-shell select::picker(select) {
+    color: var(--studio-ink);
+    background: var(--studio-paper);
+    border: 1px solid var(--studio-line);
+    border-radius: 6px;
+    box-shadow: var(--studio-shadow);
+  }
+
+  .studio-shell select::picker-icon {
+    color: var(--studio-muted);
+    margin-inline-start: auto;
+    padding-inline-start: .65em;
+  }
+
+  .studio-shell select option {
+    color: var(--studio-ink);
+    padding: .4em .65em;
+  }
+
+  .studio-shell select option:is(:checked, :hover, :focus-visible) {
+    color: var(--studio-accent);
+    background: var(--studio-accent-soft);
+  }
+}

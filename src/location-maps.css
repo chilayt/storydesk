@@ -1,0 +1,24 @@
+.location-map-index { margin-bottom: 16px; }
+.location-map-list, .location-map-settings ul { list-style: none; padding: 0; margin: 0; }
+.location-map-row + .location-map-row { border-top: 1px solid var(--border); }
+.location-map-row { padding: 10px 0; }
+.location-map-row:last-child { padding-bottom: 0; }
+.location-map-index .location-map-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 5px 0;
+  text-align: left;
+  white-space: normal;
+  color: var(--studio-accent, var(--accent));
+}
+.location-map-link strong { overflow-wrap: anywhere; font-size: 15px; }
+.location-map-link span, .location-map-settings, .location-map-missing { font-size: 12px; }
+.location-map-link span { color: var(--studio-muted); }
+.location-map-settings { margin-top: 7px; }
+.location-map-settings summary { cursor: pointer; }
+.location-map-settings p { margin: 7px 0 2px; }
+.location-map-settings .text-button { padding-inline: 0; white-space: normal; text-align: left; }
+.location-map-missing { overflow-wrap: anywhere; }

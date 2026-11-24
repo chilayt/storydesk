@@ -1,0 +1,88 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import test from 'node:test';
+import { Workspace } from '../core/workspace.mjs';
+import { splitMaterial } from '../core/library-migration.mjs';
+import { configure, fixture, output } from './helpers.mjs';
+
+test('planning works with zero chapters and saves an author-edited outline in its own scope', async t => {
+  await fs.mkdir(output, { recursive: true });
+  const root = await fs.mkdtemp(path.join(output, 'blank-book-planning-'));
+  const requests = [];
+  const workspace = new Workspace(root, { fetcher: async (_url, request) => {
+    const body = JSON.parse(request.body);
+    const content = body.messages.findLast(message => message.role === 'user').content;
+    requests.push(JSON.parse(typeof content === 'string' ? content : content.map(part => part.text).join('')));
+    return Response.json({ choices: [{ message: { content: '先让主角收到前往码头的信。' }, finish_reason: 'stop' }] });
+  } });
+  t.after(() => workspace.close());
+  await workspace.init();
+  await configure(workspace);
+  const target = 'outline_chapter_1';
+  const start = await workspace.getCowriting({ documentId: target });
+  assert.equal(start.outlineText, '');
+  const turn = await workspace.sendCowriting({ documentId: target, sourceHash: start.sourceHash, message: '讨论第一章的开端' });
+  assert.equal(turn.status, 'completed', turn.error);
+  assert.equal(requests[0].activeSource.scope, '第1章章纲');
+  assert.equal(workspace.documents.length, 0);
+  const saved = await workspace.saveWritingOutline({ documentId: target, expectedHash: start.sourceHash, text: '第一场去码头。' });
+  assert.equal(saved.kind, 'plan');
+  assert.equal(workspace.project.approvals.length, 0);
+  const after = await workspace.getCowriting({ documentId: target });
+  assert.match(after.outlineText, /第一场去码头/);
+  assert.equal(after.messages.length, 2);
+  assert.equal((await workspace.getCowriting({ documentId: 'outline_volume_1' })).messages.length, 0);
+  await assert.rejects(workspace.saveWritingOutline({ documentId: target, expectedHash: start.sourceHash, text: '覆盖' }), { code: 'CONFLICT' });
+  await workspace.sendCowriting({ documentId: target, sourceHash: after.sourceHash, message: '细化第一场' });
+  assert.match(requests[1].activeSource.currentScope, /第一场去码头/);
+});
+
+test('a mixed file and individual cards make independent files, while ambiguous content stays reviewable', async t => {
+  const f = await fixture('library-materialize');
+  const workspace = f.workspace;
+  t.after(() => f.close());
+  const chapter = '已切分/第03章_风铃.md';
+  const chapterText = '# 第三章 风铃\n\n船停在岸边。\n';
+  await f.write(chapter, chapterText);
+  const one = '来稿/01-白石堂.md';
+  const mixture = '来稿/门派.md';
+  await f.write(one, '# 白石堂\n新的说明。\n');
+  const sourceText = '# 门派\n\n## 白石堂\n另一份叙述。\n\n## 青林门\n起于山中。\n';
+  await f.write(mixture, sourceText);
+  await f.write('来稿/势力.txt', '名字和边界还要核对。');
+  await workspace.updateSettings({ sources: [...workspace.project.sources, { path: '已切分', kind: 'chapter', depth: 0, readOnly: true }] });
+  const original = workspace.documents.find(d => d.path === chapter);
+  const options = { source: '来稿', kind: 'organization', useKnownSources: false };
+  const preview = await workspace.previewLibrary(options);
+  assert.equal(preview.collisions.length, 0);
+  assert.deepEqual(preview.items.filter(item => item.kind === 'organization').map(item => item.title).sort(), ['白石堂', '青林门']);
+  assert.equal(preview.items.filter(item => item.pending).length, 2);
+  await f.write(mixture, sourceText + '\n添加一行。');
+  await assert.rejects(workspace.buildIndependentLibrary({ ...options, token: preview.token }), { code: 'CONFLICT' });
+  await f.write(mixture, sourceText);
+  const saved = await workspace.buildIndependentLibrary({ ...options, token: preview.token });
+  assert.equal(saved.copied, 1);
+  const adopted = workspace.documents.find(d => d.id === original.id);
+  assert.equal(adopted.path, '创作资料库/正文/第03章_风铃.md');
+  assert.equal(adopted.hash, original.hash);
+  assert.ok(!adopted.readOnly);
+  assert.equal(await f.read(chapter), chapterText);
+  assert.equal(await f.read(mixture), sourceText);
+  assert.match(await f.read('创作资料库/门派势力/青林门.md'), /起于山中/);
+  assert.equal(workspace.project.libraryOriginals[mixture].length, 2);
+  assert.equal((await workspace.previewLibrary(options)).total, 0);
+  await fs.rename(path.join(f.root, chapter), path.join(f.root, '已切分', '源稿移出测试.md.bak'));
+  await workspace.refresh();
+  assert.equal((await workspace.readDocument(original.id)).text, chapterText);
+  assert.equal(workspace.project.approvals.length, 0);
+});
+
+test('single authoritative cards keep their whole body', () => {
+  const source = '# 朱门\n开端。\n# 门规\n结尾。';
+  assert.deepEqual(splitMaterial(source, 'S001-朱门.md').map(part => part.text), [source]);
+  const plain = '青林门｜门派完整设定（旧稿）\n前文。\n白石堂 · 完整设定\n后文。';
+  const parts = splitMaterial(plain, '门派.txt');
+  assert.deepEqual(parts.map(part => part.title), ['门派·完整原件', '青林门·源文片段', '白石堂·源文片段']);
+  assert.ok(parts.every(part => part.pending));
+});

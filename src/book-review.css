@@ -1,0 +1,15 @@
+.book-review { padding: 16px; min-width: 0; color: var(--studio-ink); }
+.book-review-heading { flex-wrap: wrap; align-items: start; }
+.book-review-heading h2 { margin: 0 0 5px; }
+.book-review-heading p { margin: 0; color: var(--studio-muted); }
+.book-review progress { width: 100%; accent-color: var(--studio-accent); }
+.book-review-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 5px 0; border-bottom: 1px solid var(--studio-line); }
+.book-review-tabs button[aria-pressed="true"] { color: var(--studio-accent); background: var(--studio-accent-soft); border-color: var(--studio-accent); }
+.book-review-entry { padding: 11px 0; border-bottom: 1px solid var(--studio-line); overflow-wrap: anywhere; }
+.book-review-entry summary { cursor: pointer; }
+.book-review-entry summary small, .book-review-entry summary .badge { margin-inline-start: 8px; }
+.book-review-entry p { margin: 8px 0; }
+.book-review-citation { margin-block: 8px; }
+.book-review-citation blockquote { margin: 0 0 3px; padding: 6px 10px; background: var(--studio-accent-soft); white-space: pre-wrap; }
+.book-review-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; padding-block: 5px; }
+.book-review-preview { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
