@@ -18,3 +18,9 @@
 ## 后续迭代
 
 用可复现样例追踪已确认的偏好是否正确召回、纠正过的问题是否重犯、无关偏好是否误入请求。更新 MemLayer 时复跑记忆、升级和发布验收。跟踪打包工具的开发依赖更新。
+
+## Windows 代码签名
+
+`npm run installer:signed` 使用 electron-builder 构建 Windows x64 安装包，要求成功签名并将产物写入 `release-signed/`。签名时在受保护的环境中提供代码签名凭据。可由 `WIN_CSC_LINK` 与 `WIN_CSC_KEY_PASSWORD` 传入已有证书文件的凭据，或通过 `npm run installer:signed -- -c.win.signtoolOptions.certificateSha1=<指纹>` 选择 Windows 证书库中已有的证书。证书及私钥由发布者或授权签名服务保管。配置细节见 [electron-builder v26 签名文档](https://www.electron.build/v26/docs/features/code-signing/code-signing-win/)。随包 Python 保留 Python Software Foundation 的原签名。
+
+签名会改变文件的 SHA-256。发布前验证 Windows Authenticode 及时间戳，复验签名版安装，再从签名产物重新生成 SHA-256。签名后的产物以新版本发布，已公开的下载和校验文件继续对应原版本。

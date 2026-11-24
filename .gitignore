@@ -14,3 +14,6 @@ test-output/
 *.db-wal
 __pycache__/
 _创作管理/
+
+*.pfx
+*.p12

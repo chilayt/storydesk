@@ -16,7 +16,8 @@
     "test:reader": "node scripts/reader-layout-desktop-smoke.mjs",
     "test:memory": "node scripts/memlayer-desktop-smoke.mjs",
     "test:connections": "node scripts/public-connection-smoke.mjs",
-    "prepare:runtime": "node scripts/prepare-runtime.mjs"
+    "prepare:runtime": "node scripts/prepare-runtime.mjs",
+    "installer:signed": "npm run prepare:runtime && npm run build && electron-builder --win nsis --x64 -c.win.signExecutable=true -c.forceCodeSigning=true -c.directories.output=release-signed"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.3.4",
@@ -66,7 +67,16 @@
     "win": {
       "target": "nsis",
       "icon": "assets/workbench-mark.ico",
-      "signExecutable": false
+      "signExecutable": false,
+      "signtoolOptions": {
+        "signingHashAlgorithms": [
+          "sha256"
+        ]
+      },
+      "signExts": [
+        "!python.exe",
+        "!pythonw.exe"
+      ]
     },
     "nsis": {
       "oneClick": false,

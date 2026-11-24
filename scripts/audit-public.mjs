@@ -6,10 +6,10 @@ import { createHash } from 'node:crypto';
 import { extractFile, listPackage } from '@electron/asar';
 
 const sourceFolders = ['src', 'core', 'electron', 'test', 'scripts', 'vendor', 'examples', 'assets'];
-const sourceFiles = ['.gitattributes', '.gitignore', 'README.md', 'RELEASE-CHECKLIST.md', 'package.json', 'package-lock.json',
+const sourceFiles = ['.gitattributes', '.gitignore', 'README.md', 'GETTING_STARTED.md', 'RELEASE-CHECKLIST.md', 'package.json', 'package-lock.json',
   'tsconfig.json', 'vite.config.ts', 'index.html', 'LICENSE', 'NOTICE'];
 const marker = /[IE]:[\\/]+(?:豆包创作文档|Projects[\\/]+开源项目|tools[\\/]+(?:DSH|LocalModelLauncher)|AI频道)|C:[\\/]+Users[\\/]+Administrator|\u4ee4\u72d0\u5a49|[.]credentials[.]yaml|(?:ghp_|github_pat_|sk-proj-)[A-Za-z0-9_-]{30,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/iu;
-const secretFile = /(?:^|[\\/])(?:_创作管理|test-output|\.runtime[^\\/]*|\.local-backups|\.env(?:\.[^\\/]*)?|credentials(?:\.[^\\/]*)?|secrets(?:\.[^\\/]*)?)(?:[\\/]|$)|\.(?:db|sqlite|encrypted|bak-[0-9]+)(?:[\\/]|$)/iu;
+const secretFile = /(?:^|[\\/])(?:_创作管理|test-output|\.runtime[^\\/]*|\.local-backups|\.env(?:\.[^\\/]*)?|credentials(?:\.[^\\/]*)?|secrets(?:\.[^\\/]*)?)(?:[\\/]|$)|\.(?:db|sqlite|encrypted|pfx|p12|bak-[0-9]+)(?:[\\/]|$)/iu;
 function inspect(name, bytes) {
   assert.ok(!secretFile.test(name), '私有文件名出现在发布范围：' + name);
   if (!/\.(?:ico|png)$/iu.test(name)) assert.ok(!marker.test(bytes.toString('utf8')), '需人工检查发布文件：' + name);
