@@ -7,7 +7,7 @@ import { GO_CATALOG, checkGoBilling, isGoBase } from './model-connections.mjs';
 export const AUTO_FIELDS = new Set(['location', 'identity', 'goal', 'condition', 'status', 'relationship', 'skill', 'item_holder', 'knowledge', 'appearance']);
 export const LAYERS = new Set(['occurred', 'plan', 'belief', 'baseline', 'ruling']);
 export const SKILL_STAGES = ['听说', '获得载体', '读过', '开始修习', '练成某层', '熟练运用'];
-export const FIELD_LABELS = { location: '所在地点', identity: '当前身份', goal: '当前目标', condition: '身体状态', status: '当前状态', relationship: '关系', skill: '武学', item_holder: '持有物', knowledge: '知情与认知', appearance: '出场', name: '姓名', birth: '出生信息', family: '家庭', talent: '天赋', personality: '性格', setting: '世界观设定' };
+export const FIELD_LABELS = { location: '所在地点', identity: '当前身份', goal: '当前目标', condition: '身体状态', status: '当前状态', relationship: '关系', skill: '能力', item_holder: '持有物', knowledge: '知情与认知', appearance: '出场', name: '姓名', birth: '出生信息', family: '家庭', talent: '天赋', personality: '性格', setting: '世界观设定' };
 
 export function splitSource(text, max = 9500) {
   const chunks = []; let start = 0;

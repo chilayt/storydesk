@@ -63,7 +63,7 @@ export class Workspace {
     let project = await jsonOr(file, null);
     if (!project) {
       const hasGate = this.externalGate && !!await this.store.read('_tools/gate.py');
-      project = { schema_version: 1, id: uid('work'), name: path.basename(this.store.root), created_at: stamp(), documents: {}, characters: [], sources: copy(DEFAULT_SOURCES), approvals: [], jobs: [], proposals: [], locks: [], checks: [], scenes: [], records: [], baselines: {}, externalChanges: {}, reader: {}, settings: { era: hasGate ? '架空唐 · 天宝三载（744）' : '', parentWork: '', gate: { enabled: hasGate, required: hasGate, script: '_tools/gate.py', python: '', defaultCard: '05-剧本/_本地协作/05_场次交接卡.md' }, ai: { enabled: false, baseUrl: '', model: '', modelList: [], maxOutputTokens: 4096, maxTokensPerJob: BASE_TOKEN_LIMIT, dailyTokenLimit: 300000 }, theme: 'light' } };
+      project = { schema_version: 1, id: uid('work'), name: path.basename(this.store.root), created_at: stamp(), documents: {}, characters: [], sources: copy(DEFAULT_SOURCES), approvals: [], jobs: [], proposals: [], locks: [], checks: [], scenes: [], records: [], baselines: {}, externalChanges: {}, reader: {}, settings: { era: '', parentWork: '', gate: { enabled: hasGate, required: hasGate, script: '_tools/gate.py', python: '', defaultCard: '05-剧本/_本地协作/05_场次交接卡.md' }, ai: { enabled: false, baseUrl: '', model: '', modelList: [], maxOutputTokens: 4096, maxTokensPerJob: BASE_TOKEN_LIMIT, dailyTokenLimit: 300000 }, theme: 'light' } };
       project.reviewLifecycleVersion = 1;
       await atomicJson(file, project);
     }

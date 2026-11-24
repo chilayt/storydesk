@@ -4,9 +4,9 @@
 
 ## 下载与上手
 
-**[下载 Windows x64 安装包](https://github.com/chilayt/storydesk/releases/download/v2.0.14-beta.2/StoryDesk-2.0.14-beta.2-win-x64.exe)** · [发布说明和 SHA-256](https://github.com/chilayt/storydesk/releases/tag/v2.0.14-beta.2) · [首次使用说明](GETTING_STARTED.md)
+**[下载 Windows x64 安装包](https://github.com/chilayt/storydesk/releases/download/v2.0.14-beta.3/StoryDesk-2.0.14-beta.3-win-x64.exe)** · [发布说明和 SHA-256](https://github.com/chilayt/storydesk/releases/tag/v2.0.14-beta.3) · [首次使用说明](GETTING_STARTED.md)
 
-首发是 Windows x64 公开测试版，安装包未签名。安装后从开始菜单打开「创作协作台（开源版）」。Python 运行时和 MemLayer 已随包提供。阅读和编辑可离线使用。
+当前是 Windows x64 公开测试版，安装包未签名。安装后从开始菜单打开「创作协作台（开源版）」。Python 运行时和 MemLayer 已随包提供。阅读和编辑可离线使用。
 
 1. **接入小说**。首屏选「接入本地作品」，选择作品的总文件夹。想先空手试用，可以点「试玩示例」生成《北岸电台》。目录结构不同的作品，可在「作品设置 → 登记的资料位置」登记正文、人物和其他资料。
 2. **连接模型**。左下角齿轮打开「作品设置 → 模型连接」。填服务地址、模型 ID 和按需填写的 API 密钥，勾选「启用模型连接」，点「保存并测试连接」。看到「当前测试请求成功」后返回创作空间。
@@ -17,6 +17,7 @@
 - 作品文件留在本地。接入时建立管理记录，编辑并保存会写回本地稿件。请随作品目录一起备份 `_创作管理`。
 - 云端和本机共用 OpenAI 兼容的配置入口。使用云端模型时，系统会将本轮所需的提示、资料摘录与已召回记忆发送到选定服务。连接测试发送的是短样例。
 - 包内使用 MemLayer 0.2.4 的本地词法召回。长期偏好默认按作品隔离，支持确认、修正及撤回。完整对话保存在本地创作记录。
+- 默认沿用当前作品的叙事视角、人物声口和标点习惯。文风卡、词表和特定的标点规则可在各作品中单独配置。见[使用自己的文风与用词规则](GETTING_STARTED.md#使用自己的文风与用词规则)。
 
 ## 开发
 

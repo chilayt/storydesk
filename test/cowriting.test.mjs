@@ -435,7 +435,7 @@ test('the Agent reads both versioned rule files and repairs an in-scope machine 
   const mainRule = '文风/写作规则.md', voiceRule = '文风/指代.md';
   await f.write(mainRule, '# 写作规则\n\n人物应按作品确认的称谓说话。');
   await f.write(voiceRule, '# 指代细则\n\n' + '背景。'.repeat(600) + '\n\n## 人称指代\n\n- 换人时写清动作的发出者。');
-  await f.write('00-项目导航/稿件核对.json', JSON.stringify({ wording: [], ruleFiles: [mainRule, voiceRule] }));
+  await f.write('00-项目导航/稿件核对.json', JSON.stringify({ quotationStyle: 'chinese', ruleFiles: [mainRule, voiceRule] }));
   await configure(work);
   const doc = chapterTwo(work);
   const before = await f.read(doc.path);
@@ -493,6 +493,7 @@ test('candidate repair stops after one retry and leaves problems outside the sel
   } });
   t.after(f.close);
   const work = f.workspace;
+  await f.write('00-项目导航/稿件核对.json', JSON.stringify({ quotationStyle: 'chinese' }));
   await configure(work);
   const doc = chapterTwo(work);
   const before = await f.read(doc.path);

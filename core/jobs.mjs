@@ -4,7 +4,7 @@ import { splitSource, buildPrompt, requestModel, validateExtraction, FIELD_LABEL
 import { managedBlock, recordMarkdown } from './catalog.mjs';
 import { evidenceSummary, verifyFactEvidence, sourceSpans } from './evidence.mjs';
 import { loadExtraction, saveExtraction } from './extraction-cache.mjs';
-import { GATE_POLICY_VERSION } from './gate.mjs';
+import { gateQuotationStyle, GATE_POLICY_VERSION } from './gate.mjs';
 import { assertReviewCurrent, recordDecision } from './review.mjs';
 import { chapterReviewEntries, isRecordedEvent } from './chapter-review.mjs';
 import { prepareDraftPublication, registerDraftPublication } from './drafts.mjs';
@@ -34,6 +34,9 @@ export const jobMethods = {
       const check = [...this.project.checks].reverse().find(c => c.documentId === documentId && c.sourceHash === d.hash);
       if (!check || !['passed', 'not_required'].includes(check.status)) throw new AppError('NEEDS_GATE', '请先完成当前稿件的检查');
       if (check.gatePolicyVersion !== GATE_POLICY_VERSION) throw new AppError('NEEDS_GATE', '承接规则已改为提醒，请重新运行当前版本检查');
+      if (check.quotationStyle === 'any' && await gateQuotationStyle(this.store, this.gateConfiguration()) === 'chinese') {
+        throw new AppError('NEEDS_GATE', '作品引号规则已更新，请重新运行当前版本检查');
+      }
       gateCheck = check;
       if (check.carry) {
         let currentHash = null;

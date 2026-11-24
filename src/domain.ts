@@ -122,7 +122,7 @@ export interface AppContext {
 declare global {
   interface Window { storyDesk: { call(method: string, args?: any, workId?: string | null): Promise<any>; subscribe(cb: (event: any) => void): () => void; onFlush(cb: () => Promise<void>): () => void; flushNow(): Promise<void>; }; }
 }
-export const fieldLabels: Record<string, string> = { location: '所在地点', identity: '当前身份', goal: '当前目标', condition: '身体状态', status: '当前状态', relationship: '关系', skill: '武学', item_holder: '持有物', knowledge: '知情与认知', appearance: '出场' };
+export const fieldLabels: Record<string, string> = { location: '所在地点', identity: '当前身份', goal: '当前目标', condition: '身体状态', status: '当前状态', relationship: '关系', skill: '能力', item_holder: '持有物', knowledge: '知情与认知', appearance: '出场' };
 export const kindLabels: Record<string, string> = { chapter: '正文', draft: '草稿', character: '人物', reference: '综合资料', family: '家族', organization: '门派与势力', setting: '世界观', plan: '剧情设计', rule: '写作规则', plot: '剧情推进', location: '地点资料', item: '道具与物资', attachment: '地图与图纸', event: '事件', memory: '记忆规则' };
 export const chapterReferenceLabels: Record<string, string> = { review: '审读与检查', reference: '章节资料' };
 export function documentKindLabel(doc: SourceDocument) {

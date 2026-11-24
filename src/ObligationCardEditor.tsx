@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { AppContext } from './domain';
 import { Modal } from './components';
 export const obligationMethods: Record<string, string> = { semantic: '剧情语义 · AI初核后作者确认', required_text: '逐字必含 · 机检', forbidden_text: '逐字禁含 · 机检', character_mention: '人物姓名或别名被提及 · 机检' };
-export const obligationCategories: Record<string, string> = { plot: '剧情推进', character: '人物行动', relationship: '关系变化', knowledge: '知情范围', item: '道具流转', skill: '武学阶段', continuity: '前后承接', style: '表达约定', other: '其他' };
+export const obligationCategories: Record<string, string> = { plot: '剧情推进', character: '人物行动', relationship: '关系变化', knowledge: '知情范围', item: '道具流转', skill: '能力变化', continuity: '前后承接', style: '表达约定', other: '其他' };
 const newItem = (title = '') => ({ title, description: '', category: 'plot', method: 'semantic', severity: 'required', terms: [], characterIds: [] });
 export function ObligationCardEditor({ ctx, initial, documentId, onClose, onSaved }: { ctx: AppContext; initial?: any; documentId: string; onClose: () => void; onSaved: (id: string) => void }) {
   const [row, setRow] = useState<any>(() => ({ title: `${ctx.work.documents.find(d => d.id === documentId)?.title || '本场'} · 义务卡`, documentId, sceneId: '', status: 'draft', goal: '', opening: '', closing: '', source: '作者在场景义务卡中填写', items: [newItem()], ...initial }));

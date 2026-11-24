@@ -2,7 +2,7 @@ import { AppError, hash, uid } from './io.mjs';
 import { sourceSpans, locateEvidence } from './evidence.mjs';
 
 export const OBLIGATION_METHODS = { semantic: '剧情语义 · AI初核后作者确认', required_text: '逐字必含 · 机检', forbidden_text: '逐字禁含 · 机检', character_mention: '人物姓名或别名被提及 · 机检' };
-export const OBLIGATION_CATEGORIES = { plot: '剧情推进', character: '人物行动', relationship: '关系变化', knowledge: '知情范围', item: '道具流转', skill: '武学阶段', continuity: '前后承接', style: '表达约定', other: '其他' };
+export const OBLIGATION_CATEGORIES = { plot: '剧情推进', character: '人物行动', relationship: '关系变化', knowledge: '知情范围', item: '道具流转', skill: '能力变化', continuity: '前后承接', style: '表达约定', other: '其他' };
 export const obligationHash = v => hash(Buffer.from(JSON.stringify(v)));
 export function obligationFile(id, report = false) {
   if (!(report ? /^obcheck_[\w-]+$/ : /^obcard_[\w-]+$/).test(id)) throw new AppError('VALIDATION', '场景义务记录ID无效');

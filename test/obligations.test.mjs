@@ -160,7 +160,7 @@ test('本场上下文包不调用模型、不带整库；AI修订携带已确认
 test('义务放宽不能绕过原门禁中的稿件损坏硬线；作品之间隔离', async () => {
   const f = await fixture('ob-original-gate'), other = await fixture('ob-isolation'), w = f.workspace;
   try {
-    const c = await card(w, [item({ method: 'required_text', terms: ['阿青'] })]), d = w.doc(c.documentId); await w.saveDocument({ documentId: d.id, expectedHash: d.hash, text: chapterText + '\n阿青说："直引号。"\n' }); await check(w, c);
+    const c = await card(w, [item({ method: 'required_text', terms: ['阿青'] })]), d = w.doc(c.documentId); await w.saveDocument({ documentId: d.id, expectedHash: d.hash, text: chapterText + '\n阿青说：&quot;转义残留。&quot;\n' }); await check(w, c);
     const current = w.doc(d.id); await w.checksFor({ documentId: d.id }); await assert.rejects(w.confirmRevision({ documentId: d.id, sourceHash: current.hash }), { code: 'NEEDS_GATE' }); assert.equal(other.workspace.obligationCards.length, 0);
   } finally { await f.close(); await other.close(); }
 });

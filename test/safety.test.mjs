@@ -27,7 +27,7 @@ test('损坏的恢复快照不会覆盖当前文件',async t=>{
   await assert.rejects(s.restore(record.id),e=>e.code==='DAMAGED_SNAPSHOT');assert.equal(await f.read('资料/原件.md'),'修改件');
 });
 test('数据完整性四检优先，续接参数缺失不能假绿', async t => {
-  assert.ok(integrity('他说"好"。').includes('存在ASCII直引号')); assert.ok(integrity('&#x4FE1;').length); assert.ok(integrity('“未闭合').length); assert.ok(integrity('”方向反了“').length);
+  assert.ok(integrity('他说"好"。', 'chinese').includes('存在ASCII直引号')); assert.ok(integrity('&#x4FE1;').length); assert.ok(integrity('“未闭合', 'chinese').length); assert.ok(integrity('”方向反了“', 'chinese').length);
   assert.equal(integrity('阿青说：“去渡口。”').length, 0);
   const f = await fixture('gate'); t.after(f.close); const d = f.workspace.documents.find(d => d.chapter === 1);
   const r = await runGate(f.workspace.store, d, { enabled: true, script: '_tools/不存在.py' }, { continuation: true }); assert.equal(r.status, 'incomplete');
@@ -40,6 +40,24 @@ test('真实Python子进程：独立场允许无承接，空成功输出不能�
   const independent=await runGate(f.workspace.store,d,{enabled:true,script:'_tools/gate.py',python});assert.equal(independent.status,'passed');
   await f.write('_tools/gate.py','print("success")\n');
   const empty=await runGate(f.workspace.store,d,{enabled:true,script:'_tools/gate.py',python});assert.equal(empty.status,'incomplete');
+});
+test('公开版接受直引号，作品启用中文引号检查后须重新检查', async t => {
+  const f = await fixture('public-quotation-style', { externalGate: false });
+  t.after(f.close);
+  const work = f.workspace;
+  const draft = await work.createChapterDraft({
+    chapter: 12, title: '收音', importedText: '# 收音\n\n她问："Can you hear me?"',
+  });
+  const check = await work.checksFor({ documentId: draft.id });
+  assert.equal(check.status, 'not_required');
+  const review = await work.checkManuscript({ documentId: draft.id, sourceHash: draft.hash, useAI: false });
+  assert.deepEqual(review.issues, []);
+
+  await f.write('00-项目导航/稿件核对.json', JSON.stringify({ quotationStyle: 'chinese' }));
+  await assert.rejects(work.confirmRevision({ documentId: draft.id, sourceHash: draft.hash }), { code: 'NEEDS_GATE' });
+  const strictReview = await work.checkManuscript({ documentId: draft.id, sourceHash: draft.hash, useAI: false });
+  assert.equal(strictReview.gate.status, 'failed');
+  assert.ok(strictReview.issues.some(issue => issue.message === 'ASCII 直引号'));
 });
 test('段落分批无丢字；中文章号、短词与输入上限', () => {
   const source = '段落正文。\n\n'.repeat(4000); const chunks = splitSource(source); assert.equal(chunks.map(c => c.text).join(''), source); assert.ok(chunks.every(c => c.text.length <= 9500));

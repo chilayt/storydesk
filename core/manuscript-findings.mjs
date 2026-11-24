@@ -12,8 +12,9 @@ export async function readManuscriptRules(store) {
   let rules;
   try { rules = JSON.parse(decode(bytes).text); }
   catch { throw new AppError('REVIEW_RULES', '稿件核对规则文件无法读取，请修正后重跑。'); }
-  if (!rules || typeof rules !== 'object' || !Array.isArray(rules.wording) ||
-    rules.wording.some(r => typeof r?.term !== 'string' || !r.term || typeof r.message !== 'string') ||
+  if (!rules || typeof rules !== 'object' || Array.isArray(rules) ||
+    rules.wording !== undefined && (!Array.isArray(rules.wording) || rules.wording.some(r => typeof r?.term !== 'string' || !r.term || typeof r.message !== 'string')) ||
+    rules.quotationStyle !== undefined && !['any', 'chinese'].includes(rules.quotationStyle) ||
     rules.ruleFiles !== undefined && (!Array.isArray(rules.ruleFiles) || rules.ruleFiles.some(path => typeof path !== 'string')) ||
     rules.ruleSources !== undefined && (!Array.isArray(rules.ruleSources) || rules.ruleSources.some(source =>
       typeof source?.path !== 'string' || !source.path || typeof source.label !== 'string' ||
@@ -126,12 +127,13 @@ function gateParts(line) {
   return content.split(/；(?![^（〔(]*[）〕)])/u);
 }
 
-function formatFindings(text, add) {
+function formatFindings(text, add, quotationStyle) {
   const addAll = (pattern, message) => {
     for (const m of text.matchAll(pattern)) add({ category: 'style', severity: 'hard', message }, { start: m.index, end: m.index + m[0].length });
   };
-  addAll(/"/gu, 'ASCII 直引号');
   addAll(/&#(?:x[0-9a-f]+|\d+);|&(?:quot|amp|lt|gt|apos);/giu, 'HTML 实体残留');
+  if (quotationStyle !== 'chinese') return;
+  addAll(/"/gu, 'ASCII 直引号');
   let open = null;
   for (const m of text.matchAll(/[“”]/gu)) {
     if (m[0] === '“') {
@@ -171,7 +173,7 @@ function stylePositions(text, spans, notice, dialogue) {
 export function machineFindings(text, gate, rules = {}, spans = manuscriptSpans(text)) {
   const rows = [], lines = linesOf(text);
   const add = (data, position) => rows.push(finding(text, lines, { origin: 'machine', ...data }, position));
-  formatFindings(text, add);
+  formatFindings(text, add, gate.quotationStyle ?? rules.quotationStyle);
   const dialogue = [...text.matchAll(/“[^”]*”/gu)].map(m => ({ start: m.index, end: m.index + m[0].length }));
   const rulesByTerm = new Map((rules.wording || []).map(rule => [rule.term, rule]));
   for (const n of wordingNotices(gate.output)) {

@@ -72,7 +72,7 @@ export function Library({ctx,settingsOnly=false}:{ctx:AppContext;settingsOnly?:b
         hide ? '已移出。可在「已移出章节资料」恢复。' : '已恢复资料');
     } finally { setChangingVisibility(false); }
   }
-  return <div className="content-page"><div className="page-heading"><div><span className="eyebrow">{settingsOnly?'WORLD BIBLE':'SOURCE LIBRARY'}</span><h1>{settingsOnly?'世界观设定':'资料库'}</h1><p>{settingsOnly?'时代、名物与武学，按作品现行口径核对。':'现行文档原位接入，暂未结构化的内容也能直接查看。'}</p></div><div className="actions">{!settingsOnly && <>
+  return <div className="content-page"><div className="page-heading"><div><span className="eyebrow">{settingsOnly?'WORLD BIBLE':'SOURCE LIBRARY'}</span><h1>{settingsOnly?'世界观设定':'资料库'}</h1><p>{settingsOnly?'按作品现行设定核对时代、地点、器物与能力。':'现行文档原位接入，暂未结构化的内容也能直接查看。'}</p></div><div className="actions">{!settingsOnly && <>
     <ImportTextButton ctx={ctx} onImported={files => {
       setCategory('imported-text'); setQuery(''); ctx.notify(`已导入 ${files.length} 份文本`);
     }}/>

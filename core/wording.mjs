@@ -1,5 +1,15 @@
 import { AppError, uid, stamp, hash, encode, decode } from './io.mjs';
 
+const wordingPath = '05-剧本/设定/用词_作者裁定.md';
+const legacyWordingPath = '05-剧本/设定/唐代用词_作者裁定.md';
+
+async function wordingDocument(store) {
+  const current = await store.read(wordingPath);
+  if (current) return { relative: wordingPath, bytes: current };
+  const legacy = await store.read(legacyWordingPath);
+  return legacy ? { relative: legacyWordingPath, bytes: legacy } : { relative: wordingPath, bytes: null };
+}
+
 export function wordingNotices(output) {
   let report;
   const line = String(output).split('\n').find(l => l.startsWith('STORYDESK_GATE_JSON:'));
@@ -51,21 +61,20 @@ export const wordingMethods = {
         author: '作者', confirmed_at: stamp(), active: true, sources };
     });
     next.wordingDecisions.push(...records);
-    const relative = '05-剧本/设定/唐代用词_作者裁定.md';
-    const before = await this.store.read(relative);
-    const body = '# 唐代用词 · 作者裁定\n\n本表由创作台记录作者确认的用词范围。\n\n' + next.wordingDecisions.map(r => {
+    const { relative, bytes: before } = await wordingDocument(this.store);
+    const body = '# 用词 · 作者裁定\n\n本表由创作台记录作者确认的用词范围。\n\n' + next.wordingDecisions.map(r => {
       const links = (r.sources || []).map(s => `- 查证出处：${s.title.replace(/[\r\n]/g, ' ')} <${s.url}>\n`).join('');
       return `## ${r.term} · ${r.active === false ? '已撤销' : r.allow ? '作者放行' : '保留提醒'}\n\n- 范围：${({ revision: '本章本次版本全文', document: '本章全文（包含后续修订）', work: '全作品（含后续章节）' })[r.scope]}\n${r.usage ? '- 用法：' + r.usage + '\n' : ''}- 来源：${r.documentPath}\n- 版本：${r.sourceHash}\n- 作者确认：${r.confirmed_at}\n- 依据：${r.raw.replaceAll('\n', ' ')}\n- 理由：${r.reason || '作者裁定'}\n${links}- 记录ID：${r.id}\n`;
     }).join('\n');
     if (before && this.project.externalChanges[this.documents.find(v => v.path === relative)?.id]) throw new AppError('CONFLICT', '用词裁定文档存在外部修改，请先核对');
-    await this.commit('作者裁定唐代用词适用范围', [{ path: relative, expectedHash: before ? hash(before) : null, bytes: encode(body, before ? decode(before) : {}) }], next);
+    await this.commit('作者裁定用词适用范围', [{ path: relative, expectedHash: before ? hash(before) : null, bytes: encode(body, before ? decode(before) : {}) }], next);
     return records;
   },
   async revokeWording({ id }) {
     const next = structuredClone(this.project); const r = next.wordingDecisions?.find(r => r.id === id); if (!r) throw new AppError('NOT_FOUND', '裁定记录不存在');
     r.active = false; r.revoked_at = stamp();
     // Regenerate the same human-readable projection without erasing other active decisions.
-    const relative = '05-剧本/设定/唐代用词_作者裁定.md', bytes = await this.store.read(relative);
+    const { relative, bytes } = await wordingDocument(this.store);
     let changes = [];
     if (bytes) { const d = decode(bytes); const marker = `- 记录ID：${id}`; if (!d.text.includes(marker)) throw new AppError('CONFLICT', '规则文档已在外部改变，请先核对'); changes = [{ path: relative, expectedHash: hash(bytes), bytes: encode(d.text.replace(marker, `${marker}\n- 已撤销：${r.revoked_at}`), d) }]; }
     return this.commit('撤销作者用词放行', changes, next);

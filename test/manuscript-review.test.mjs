@@ -174,7 +174,7 @@ test('old releases can be carried together and original-passage confirmations su
   const renewed = await w.carryManuscriptWording({ documentId: doc.id, sourceHash: edit.document.hash, reportId: second.id,
     decisionIds, confirmed: true });
   assert.ok(renewed.issues.filter(i => i.term).every(i => i.allowed && i.decision.scope === 'document'));
-  assert.match(await f.read('05-剧本/设定/唐代用词_作者裁定.md'), /本章全文（包含后续修订）/u);
+  assert.match(await f.read('05-剧本/设定/用词_作者裁定.md'), /本章全文（包含后续修订）/u);
   const changed = await w.saveDocument({ documentId: doc.id, expectedHash: edit.document.hash,
     text: edit.document.text.replace('没有等船停稳', '看见船已停稳') });
   const third = await w.checkManuscript({ documentId: doc.id, sourceHash: changed.document.hash });

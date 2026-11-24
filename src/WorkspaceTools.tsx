@@ -84,7 +84,7 @@ function Attachment({ ctx, id }: { ctx: AppContext; id?: string }) {
 type RuleSource = { path: string; label: string; group: string; use: string };
 const writingRuleGroups = [
   ['style', '文风与人物声口', '随写作任务选取，专项按场引用'],
-  ['wording', '唐代用词与判例', '查词义、场合和作者已有裁定'],
+  ['wording', '作品词表与示例', '查词义、场合和作者已有裁定'],
   ['context', '交接与前情', '按场查承接，前情以现行确认资料为准'],
   ['legacy', '旧流程', '查阅旧版开工与验收记录'],
 ];

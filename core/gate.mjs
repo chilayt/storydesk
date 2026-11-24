@@ -3,6 +3,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { AppError, stamp, hash } from './io.mjs';
 import { prepareCarry } from './carry.mjs';
+import { readManuscriptRules } from './manuscript-findings.mjs';
 
 export const GATE_POLICY_VERSION = 2;
 
@@ -12,10 +13,16 @@ export async function findPython(configured) {
   for (const p of candidates) if (await exists(p)) return p;
   return null;
 }
-export function integrity(text) {
+export async function gateQuotationStyle(store, config) {
+  const { rules } = await readManuscriptRules(store);
+  return rules.quotationStyle ?? (config.enabled ? 'chinese' : 'any');
+}
+
+export function integrity(text, quotationStyle = 'any') {
   const problems = [];
-  if (text.includes('"')) problems.push('存在ASCII直引号');
   if (/&#(?:x[0-9a-f]+|\d+);|&(?:quot|amp|lt|gt|apos);/i.test(text)) problems.push('存在HTML实体残留');
+  if (quotationStyle !== 'chinese') return problems;
+  if (text.includes('"')) problems.push('存在ASCII直引号');
   if ((text.match(/“/g) || []).length !== (text.match(/”/g) || []).length) problems.push('中文引号左右不配对');
   let opened = false;
   for (const c of text) { if (c === '“') { if (opened) { problems.push('中文引号开闭顺序异常'); break; } opened = true; } if (c === '”') { if (!opened) { problems.push('中文引号开闭顺序异常'); break; } opened = false; } }
@@ -23,8 +30,9 @@ export function integrity(text) {
 }
 export async function runGate(store, document, config, { continuation = false, pair = '', card = '', legacy = false, signal } = {}) {
   signal?.throwIfAborted();
-  const local = integrity(document.text);
-  const record = { id: `check_${Date.now()}`, gatePolicyVersion: GATE_POLICY_VERSION, documentId: document.id, sourceHash: document.hash, checked_at: stamp(), status: 'incomplete', code: null, output: '', parameters: { continuation, pair, card, legacy } };
+  const quotationStyle = await gateQuotationStyle(store, config);
+  const local = integrity(document.text, quotationStyle);
+  const record = { id: `check_${Date.now()}`, gatePolicyVersion: GATE_POLICY_VERSION, quotationStyle, documentId: document.id, sourceHash: document.hash, checked_at: stamp(), status: 'incomplete', code: null, output: '', parameters: { continuation, pair, card, legacy } };
   if (local.length) return { ...record, status: 'failed', code: 1, output: `数据完整性未通过：\n${local.join('\n')}` };
   if (!config.enabled) return { ...record, status: 'not_required', code: 0, output: '本作品未配置文风门禁，基础数据完整性检查已通过。' };
   const script = await store.resolve(config.script || '_tools/gate.py');

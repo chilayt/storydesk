@@ -25,7 +25,7 @@ export default function Obligations({ ctx, nav }: { ctx: AppContext; nav: Naviga
   }
   const pending = report?.results?.filter((x: any) => x.item.severity === 'required' && !x.resolved) || [];
   return <div className="obligations-page"><div className="page-heading"><div><h1>场景与核对</h1><p>本场约定逐项留痕；机检保证没有漏查，语义满足由作者裁定。</p></div><button className="primary" disabled={!doc} onClick={() => setEditor({})}><Icon name="plus"/>新建义务卡</button></div>
-    <div className="notice">义务卡确认前是计划；核对报告不写入人物事实。只有你确认并启用的卡片参与成稿前核对，唐代用词继续按既有软线裁定处理。</div>
+    <div className="notice">义务卡确认前是计划；核对报告不写入人物事实。只有你确认并启用的卡片参与成稿前核对。</div>
     <label>选择稿件<select aria-label="义务稿件筛选" value={documentId} onChange={e => { setDocumentId(e.target.value); setCardId(''); setReport(null); setError(''); }}>{ctx.work.documents.filter(d => ['chapter', 'draft'].includes(d.kind)).map(d => <option key={d.id} value={d.id}>{d.title}</option>)}</select></label>
     <div className="obligation-layout"><aside className="obligation-list">{cards.map(c => <button className={c.id === card?.id ? 'active' : ''} key={c.id} onClick={() => { setCardId(c.id); setError(''); }}><strong>{c.title}</strong><small>{states[c.status] || '待恢复'} · {c.sceneId ? ctx.work.scenes.find(s => s.id === c.sceneId)?.name || '失效场景' : '整份稿件'} · {c.items?.length || 0}项</small></button>)}{!cards.length && <p className="muted">本稿件尚无义务卡。</p>}</aside>
       <div className="obligation-main">{!card ? <Empty title="把本场必须交代的内容列成清单" detail="可先批量粘贴已确认的分场要求，再选择哪些适合机检、哪些需要语义核对。"/> : <>

@@ -21,6 +21,7 @@ test('出场索引会随保存更新，不需要整章先通过文风确认',asy
 });
 test('唐代提醒解析保留括号内分隔；放行按版本、章节、作品隔离且可撤销',async t=>{
   const f=await fixture('wording');t.after(f.close);const doc=f.workspace.documents.find(d=>d.chapter===1);const check={id:'check-fixture',documentId:doc.id,sourceHash:doc.hash,status:'passed',output:'⚠ 唐代用词醒目提醒：折扇×1→纨扇；某用法×2（对白；正则 abc）\n'};f.workspace.project.checks.push(check);await f.workspace.persist();
+  await f.write('05-剧本/设定/唐代用词_作者裁定.md', '# 旧版裁定\n');
   assert.equal(wordingNotices(check.output).length,2);let r=await f.workspace.decideWording({checkId:check.id,term:'折扇',scope:'revision',reason:'架空裁定'});assert.equal(r.wording[0].allowed,true);assert.equal(decorateWording({...check,sourceHash:'changed'},f.workspace.project).wording[0].allowed,false);
   r=await f.workspace.decideWording({checkId:check.id,term:'折扇',scope:'document'});assert.equal(decorateWording({...check,sourceHash:'changed'},f.workspace.project).wording[0].allowed,true);assert.equal(decorateWording({...check,documentId:'other'},f.workspace.project).wording[0].allowed,false);
   await f.workspace.decideWording({checkId:check.id,term:'折扇',scope:'work'});assert.equal(decorateWording({...check,documentId:'other'},f.workspace.project).wording[0].allowed,true);

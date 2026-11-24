@@ -6,7 +6,7 @@ import { confirmedResearchSettings } from './world-context.mjs';
 import { findLocationReferences } from './location-maps.mjs';
 import { stagePlans } from './stage-plans.mjs';
 
-const fields = { location: '所在地点', identity: '身份', goal: '目标', condition: '身体状态', relationship: '关系', skill: '武学', knowledge: '知情', item_holder: '持有物', appearance: '出场' };
+const fields = { location: '所在地点', identity: '身份', goal: '目标', condition: '身体状态', relationship: '关系', skill: '能力', knowledge: '知情', item_holder: '持有物', appearance: '出场' };
 function describeCharacter(character) {
   const lines = [`人物：${character.name}`];
   if (character.issue) return `${lines[0]}\n\n${character.issue}`;
@@ -167,7 +167,7 @@ export function writingManifest(workspace, source, range, context, { task, words
     [`状态：${hookStatus[hook.status] || hook.status}`, hook.note, hook.target ? `预期范围：${hook.target}` : ''].filter(Boolean).join('\n\n'), '当前适用伏笔', '', '避免遗漏未收事项');
   for (const rule of context.writingRules.sources) {
     const status = rule.use === 'examples' ? '校订判例 · 按词查阅'
-      : rule.use === 'lookup' ? '唐代用词 · 按词查阅' : rule.excerpted ? '当前规则 · 摘录' : '当前规则';
+      : rule.use === 'lookup' ? '作品词表 · 按词查阅' : rule.excerpted ? '当前规则 · 摘录' : '当前规则';
     add('rule', rule.title, rule.excerpt, status, rule.path, '使用本轮稿件和任务范围选取');
   }
   for (const card of input.obligations) add('obligation', card.title, JSON.stringify(card, null, 2), '作者场景约定');
@@ -189,7 +189,6 @@ export function writingManifest(workspace, source, range, context, { task, words
   }
   if (!input.previousEnding && source.chapter > 1) missing.push('尚无可用的已确认前章结尾，未自动把未确认稿当作正式前情。');
   if (!input.outlines.some(o => o.status === '作者已定卷纲')) missing.push('尚无适用的已定卷纲；已有草案仅作规划参考。');
-  if (!input.style) missing.push('未找到适用的文风卡或写作规则文件。');
   for (const path of context.writingRules.missing) missing.push('当前规则资料不可读 · ' + path);
   if (source.text.length > range.end && range.start === 0 && range.end > 0) missing.push(`本轮正文范围读取前 ${range.end} 字符，未读取后续全文；不能据此认定整章已核对。`);
   const signature = hash(Buffer.from(JSON.stringify([source.id, source.hash, range, context.heads, input.task, input.authorWording,

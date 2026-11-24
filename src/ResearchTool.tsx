@@ -141,7 +141,7 @@ export default function ResearchTool({ ctx, requestedId }: { ctx: AppContext; re
       <form className="research-search" onSubmit={search}>
         <label htmlFor={formId + '-query'}>搜索词</label>
         <div><input id={formId + '-query'} value={query} maxLength={220} onChange={e => setQuery(e.target.value)}
-          placeholder="例如：唐代敦煌文书里的驿站与差使"/>
+          placeholder="例如：20 世纪早期广播电台的工作流程"/>
           <button type="submit" className="primary" disabled={searching || !query.trim()}><Icon name="search" size={15}/>{searching ? '搜索中…' : '搜索'}</button></div>
         <p className="research-meta">Exa 网页搜索 · 向搜索服务发送你填写的搜索词</p>
       </form>
