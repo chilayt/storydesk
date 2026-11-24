@@ -5,7 +5,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { extractFile, listPackage } from '@electron/asar';
 
-const sourceFolders = ['src', 'core', 'electron', 'test', 'scripts', 'vendor', 'examples', 'assets'];
+const sourceFolders = ['.github', 'src', 'core', 'electron', 'test', 'scripts', 'vendor', 'examples', 'assets'];
 const sourceFiles = ['.gitattributes', '.gitignore', 'README.md', 'GETTING_STARTED.md', 'RELEASE-CHECKLIST.md', 'package.json', 'package-lock.json',
   'tsconfig.json', 'vite.config.ts', 'index.html', 'LICENSE', 'NOTICE'];
 const marker = /[IE]:[\\/]+(?:豆包创作文档|Projects[\\/]+开源项目|tools[\\/]+(?:DSH|LocalModelLauncher)|AI频道)|C:[\\/]+Users[\\/]+Administrator|\u4ee4\u72d0\u5a49|[.]credentials[.]yaml|(?:ghp_|github_pat_|sk-proj-)[A-Za-z0-9_-]{30,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/iu;

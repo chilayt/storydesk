@@ -24,3 +24,9 @@
 `npm run installer:signed` 使用 electron-builder 构建 Windows x64 安装包，要求成功签名并将产物写入 `release-signed/`。签名时在受保护的环境中提供代码签名凭据。可由 `WIN_CSC_LINK` 与 `WIN_CSC_KEY_PASSWORD` 传入已有证书文件的凭据，或通过 `npm run installer:signed -- -c.win.signtoolOptions.certificateSha1=<指纹>` 选择 Windows 证书库中已有的证书。证书及私钥由发布者或授权签名服务保管。配置细节见 [electron-builder v26 签名文档](https://www.electron.build/v26/docs/features/code-signing/code-signing-win/)。随包 Python 保留 Python Software Foundation 的原签名。
 
 签名会改变文件的 SHA-256。发布前验证 Windows Authenticode 及时间戳，复验签名版安装，再从签名产物重新生成 SHA-256。签名后的产物以新版本发布，已公开的下载和校验文件继续对应原版本。
+
+## GitHub 托管的 Windows 构建
+
+在 GitHub 的 **Actions → Windows build → Run workflow** 运行构建。流程用 `windows-2025` 托管运行器安装锁定依赖，执行核心测试，构建并扫描 Windows x64 安装包。运行摘要注明源码提交与 SHA-256。安装包和校验文件分别保存在 `storydesk-windows-x64-unsigned` 与 `storydesk-windows-x64-unsigned-sha256` 产物中。
+
+接入 SignPath Foundation 时，从同一托管工作流把安装包产物 ID 传给签名动作，维护者审批签名请求。签名产物需要重新计算 SHA-256，再验收与发布。签名服务的项目和授权由审核后的配置提供。 [SignPath GitHub 接入说明](https://docs.signpath.io/trusted-build-systems/github)
