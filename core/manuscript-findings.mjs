@@ -1,10 +1,19 @@
 import { AppError, decode, hash } from './io.mjs';
 import { wordingNotices } from './wording.mjs';
 import { locateReviewBasis } from './manuscript-evidence.mjs';
+import { deliveryCheckIds } from './writing-rule-packs.mjs';
 
 export const reviewCategories = ['wording', 'dialogue', 'behavior', 'style'];
 export const manuscriptRulesPath = '00-项目导航/稿件核对.json';
 export const ruleGroups = ['style', 'wording', 'context', 'legacy', 'workflow'];
+
+function validSceneRule(scene) {
+  return typeof scene?.label === 'string' && !!scene.label.trim() &&
+    typeof scene.anchor === 'string' && !!scene.anchor.trim() &&
+    (scene.until === undefined || typeof scene.until === 'string' && !!scene.until.trim()) &&
+    Array.isArray(scene.match) && scene.match.length > 0 &&
+    scene.match.every(word => typeof word === 'string' && !!word.trim());
+}
 
 export async function readManuscriptRules(store) {
   const bytes = await store.read(manuscriptRulesPath);
@@ -15,11 +24,20 @@ export async function readManuscriptRules(store) {
   if (!rules || typeof rules !== 'object' || Array.isArray(rules) ||
     rules.wording !== undefined && (!Array.isArray(rules.wording) || rules.wording.some(r => typeof r?.term !== 'string' || !r.term || typeof r.message !== 'string')) ||
     rules.quotationStyle !== undefined && !['any', 'chinese'].includes(rules.quotationStyle) ||
+    rules.preDeliveryStyleReview !== undefined && typeof rules.preDeliveryStyleReview !== 'boolean' ||
+    rules.wordingPolicy !== undefined && !['work', 'tang'].includes(rules.wordingPolicy) ||
+    rules.preDeliveryChecks !== undefined && (!Array.isArray(rules.preDeliveryChecks) || !rules.preDeliveryChecks.length ||
+      rules.preDeliveryChecks.some(id => !deliveryCheckIds.has(id))) ||
+    rules.specialReview !== undefined && (rules.specialReview?.issueReceipts !== true ||
+      !['perScene', 'perChapter'].every(key => Number.isSafeInteger(rules.specialReview.similes?.[key]) && rules.specialReview.similes[key] >= 0)) ||
     rules.ruleFiles !== undefined && (!Array.isArray(rules.ruleFiles) || rules.ruleFiles.some(path => typeof path !== 'string')) ||
     rules.ruleSources !== undefined && (!Array.isArray(rules.ruleSources) || rules.ruleSources.some(source =>
       typeof source?.path !== 'string' || !source.path || typeof source.label !== 'string' ||
       !ruleGroups.includes(source.group) || !['core', 'chapter', 'lookup', 'examples', 'reference'].includes(source.use) ||
+      source.phase !== undefined && (source.phase !== 'review' || source.use !== 'reference') ||
+      source.unabridged !== undefined && (typeof source.unabridged !== 'boolean' || source.use !== 'core') ||
       source.limit !== undefined && (!Number.isInteger(source.limit) || source.limit < 100 || source.limit > 1500) ||
+      source.scenes !== undefined && (source.use !== 'core' || !Array.isArray(source.scenes) || !source.scenes.every(validSceneRule)) ||
       source.use === 'chapter' && (!Array.isArray(source.chapters) || !source.chapters.length ||
         source.chapters.some(chapter => !Number.isInteger(chapter) || chapter < 1)))) ||
     Object.values(rules.exceptions || {}).some(values => !Array.isArray(values) || values.some(v => typeof v !== 'string'))) {

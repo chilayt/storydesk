@@ -120,6 +120,19 @@ try {
   checks.push('从创作对话点击保存绑定作者原话，候选未经确认时不可召回');
 
   await openSharedMemory();
+  const activeMemory = await call('memlayerStatus');
+  await page.getByText('MemLayer ' + activeMemory.version, { exact: true }).waitFor();
+  await app.evaluate(({ shell }) => {
+    shell.openExternal = async url => { globalThis.memoryDocsUrl = url; };
+  });
+  await page.getByRole('button', { name: '了解 MemLayer', exact: true }).click();
+  let docsUrl;
+  for (let i = 0; !docsUrl && i < 30; i++) {
+    docsUrl = await app.evaluate(() => globalThis.memoryDocsUrl);
+    if (!docsUrl) await delay(25);
+  }
+  assert.equal(docsUrl, 'https://github.com/chilayt/memlayer/blob/main/README.zh-CN.md');
+  checks.push('记忆中心显示实际运行版本，链接打开 MemLayer 中文介绍');
   const pendingCard = page.locator('.memory-card').filter({ hasText: original });
   await pendingCard.getByRole('button', { name: '编辑', exact: true }).click();
   await page.getByLabel('修改候选原话', { exact: true }).fill(edit);

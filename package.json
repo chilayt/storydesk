@@ -1,7 +1,7 @@
 {
   "name": "storydesk-public",
-  "productName": "创作协作台开源版",
-  "version": "2.0.14-beta.3",
+  "productName": "章间",
+  "version": "2.1.0-beta.1",
   "private": true,
   "description": "本地文档优先的小说资料、正文与剧情归档工作台",
   "type": "module",
@@ -49,7 +49,7 @@
   },
   "build": {
     "appId": "local.storydesk.public",
-    "productName": "创作协作台开源版",
+    "productName": "章间",
     "directories": {
       "output": "release-public"
     },
@@ -82,7 +82,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "创作协作台（开源版）"
+      "shortcutName": "章间"
     },
     "electronFuses": {
       "runAsNode": false,

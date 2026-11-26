@@ -16,7 +16,7 @@ export function waitingTagLength(text) {
   return 0;
 }
 
-const textTools = new Set(['find_outline', 'find_characters', 'find_setting', 'read_reference', 'prepare_draft_action',
+const textTools = new Set(['find_outline', 'find_characters', 'find_setting', 'read_reference', 'read_conversation_history', 'prepare_draft_action',
   'find_workspace_files', 'open_workspace_file', 'prepare_workspace_edit', 'prepare_workspace_archive', 'create_writing_file', 'prepare_wording_review']);
 
 function validParameter(value, rule) {

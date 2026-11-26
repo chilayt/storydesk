@@ -11,7 +11,7 @@ export interface Annotation {
 export interface CreativeTask {
   id: string; taskHash: string; workId: string; kind: Exclude<WritingScope, 'draft'>; documentId: string; sceneId: string | null; filePath?: string;
   title: string; goal: string; notes: string; phase: WritingPhase; status: 'active' | 'archived' | 'deleted';
-  purpose?: 'character';
+  purpose?: 'character' | 'book';
   annotations: Annotation[]; referenceIds: string[]; updated_at: string;
   recoveryDraft?: { sourceHash: string; text: string; saved_at: string };
 }
@@ -38,6 +38,23 @@ export interface StagePlanProposal {
   title: string; body: string; recordId?: string;
   details: { fromChapter: number; toChapter: number; milestones: import('./domain').StageNode[] };
 }
+export interface BookDesignItem {
+  id: string; kind: 'work' | 'volume' | 'chapter' | 'character' | 'setting';
+  title: string; path: string; text: string; quote: string; previous: string; savedAt?: string;
+}
+export type BookDecisionTopic = 'premise' | 'character' | 'relationship' | 'plot' | 'setting' | 'volume' | 'chapter';
+export type BookDecisionStatus = 'exploring' | 'tentative' | 'confirmed';
+export interface BookDecision {
+  id: string; topic: BookDecisionTopic; title: string; text: string;
+  status: BookDecisionStatus; revision: number; version: number;
+  documents: { id: string; title: string }[]; dependsOn: { id: string; title: string }[];
+  review: { id: string; title: string; text: string }[];
+  previous?: { text: string; status: BookDecisionStatus; revision: number };
+}
+export interface BookDecisionProposal {
+  id: string; topic: BookDecisionTopic; title: string; text: string; quote: string;
+  dependsOn: string[]; documents: string[]; savedId?: string; replaces?: string;
+}
 export type WorkspaceAction =
   | ({ type: 'edit'; edits: { before: string; after: string; reason: string }[]; applied?: boolean; appliedHash?: string;
     selection?: { start: number; end: number; text: string } } & WorkspaceFilePin)
@@ -46,11 +63,14 @@ export type WritingFollowUp = { id: string; text: string; references: Discussion
 export interface WritingView {
   documentId: string; sceneId: string | null; sourceHash: string;
   range: { label: string; excerpt: string }; hasDraft: boolean; outlineText?: string; outlineDocumentId?: string;
+  bookDecisions?: BookDecision[];
   recoveryDraft?: { text: string; baseHash: string; saved_at: string } | null;
   messages: { id: string; role: 'author' | 'assistant'; text: string; mode: WritingMode; sourceHash?: string; referenceTitle?: string; incomplete?: boolean; toolFailure?: boolean; sourceStale?: boolean;
     at?: string; hiddenAt?: string; elapsedMs?: number; activity?: string[]; imageNames?: string[];
     artifact?: { title: string; path: string; kind: string };
     stagePlan?: StagePlanProposal;
+    bookDesign?: BookDesignItem[];
+    bookDecisionProposals?: BookDecisionProposal[];
     memorySuggestion?: { id?: string; text: string; quote: string; sourceId: string };
     reviewAction?: ReviewBatch;
     draftAction?: DraftAction; workspaceAction?: WorkspaceAction; openedWorkspaceFile?: { documentId: string; kind: string } }[];

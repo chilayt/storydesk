@@ -288,3 +288,17 @@
 }
 .studio-discussion-reference span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .studio-discussion-reference button { flex-shrink: 0; }
+
+.book-guide-progress { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 0; margin: 12px 0; list-style: none; }
+.book-progress-details { margin: 3px 16px 8px; color: var(--studio-muted); }
+.book-guide-progress li { display: flex; align-items: baseline; gap: 5px; color: var(--studio-ink); }
+.book-guide-progress small, .book-design-row small { color: var(--studio-muted); }
+.book-design-card { margin-top: 12px; border: 1px solid var(--studio-line); border-radius: 9px; }
+.book-design-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 9px 11px; }
+.book-design-row + .book-design-row { border-top: 1px solid var(--studio-line); }
+.book-design-row strong { display: block; overflow-wrap: anywhere; }
+.book-design-original { max-height: 13rem; overflow: auto; white-space: pre-wrap; font: inherit; }
+.book-decision-list { max-height: min(32vh, 320px); overflow: auto; border: 1px solid var(--studio-line); border-radius: 9px; }
+.book-decision-row p { margin: 4px 0; }
+.book-decision-links { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.book-decision-review p { margin: 4px 0 10px; }

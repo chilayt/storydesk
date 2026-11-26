@@ -107,6 +107,14 @@ def review_note(value: object) -> str:
     return value.replace("\r", " ").replace("\n", " ")[:1000]
 
 
+def fact_review_hash(fact: dict) -> str:
+    snapshot = {key: fact[key] for key in
+                ("id", "project", "subject", "text", "source_ids", "status", "confirmed", "perspective")}
+    # The Markdown reader uses universal newlines and strips surrounding whitespace.
+    snapshot["text"] = snapshot["text"].replace("\r\n", "\n").replace("\r", "\n").strip()
+    return hashlib.sha256(json.dumps(snapshot, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+
 class Store:
     def __init__(self, root: str | Path, *, retraction_mirror: str | Path | None = None):
         self.root = Path(root)
@@ -847,7 +855,13 @@ class Store:
         return dict(zip(cols, row))
 
     def approve_candidate(self, candidate_id: str, expected_hash: str, note: str = "",
-                          supersedes_fact_id: str | None = None, *, add_exception: bool = False) -> dict:
+                          supersedes_fact_id: str | None = None, *, add_exception: bool = False,
+                          expected_target_hash: str | None = None) -> dict:
+        if expected_target_hash is not None and (
+            not supersedes_fact_id or not isinstance(expected_target_hash, str)
+            or not re.fullmatch(r"[a-f0-9]{64}", expected_target_hash)
+        ):
+            raise ValueError("invalid review hash for the selected current memory")
         clean_note = review_note(note)
         candidate = self._check_review(self.get_candidate(candidate_id), expected_hash)
         if candidate["status"] == "approved":
@@ -881,6 +895,16 @@ class Store:
             old = self._replacement_target(candidate, supersedes_fact_id)
             if old["status"] != "current":
                 raise ReviewConflict("待替换的旧记忆已停用，请重新核对")
+            if expected_target_hash is not None:
+                try:
+                    markdown = parse_md(self._path(old))
+                    matching_review = all(fact_review_hash(snapshot) == expected_target_hash
+                                          for snapshot in (old, markdown))
+                except (OSError, ValueError, KeyError) as exc:
+                    raise ReviewConflict("无法核对旧记忆，请重新读取") from exc
+                if not matching_review:
+                    raise ReviewConflict("旧记忆已修改，请重新核对")
+                old = markdown
         if add_exception and not supersedes_fact_id:
             raise ValueError("请选择要补充例外的现行记忆")
         wording = candidate["text"]

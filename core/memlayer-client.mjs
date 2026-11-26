@@ -177,19 +177,23 @@ export async function proposeMemlayerCandidate(settings, { workId, scope, text, 
   return { id: row.id, scope, scopeLabel: scopeLabel(scope), status: row.status, text: row.text, hash: row.content_hash, source: row.source_event_id, duplicate: !!data.result?.duplicate };
 }
 
-export async function reviewMemlayerCandidate(settings, { workId, scope, decision, id, hash, supersedesFactId, reason }, signal, fetcher = fetch) {
+export async function reviewMemlayerCandidate(settings, { workId, scope, decision, id, hash, supersedesFactId, expectedTargetHash, reason }, signal, fetcher = fetch) {
   if (!['approve', 'reject', 'approve-replacement', 'approve-exception'].includes(decision)) throw new AppError('VALIDATION', '请选择确认或拒绝');
   const updatesExisting = decision === 'approve-replacement' || decision === 'approve-exception';
   if (reason && (decision !== 'reject' || !['only_once', 'scope_too_broad', 'already_exists'].includes(reason))) {
     throw new AppError('VALIDATION', '候选拒绝原因无效');
   }
   if (updatesExisting && !supersedesFactId) throw new AppError('VALIDATION', '请选择待替换的旧记忆');
+  if (expectedTargetHash !== undefined && (!updatesExisting || !/^[a-f0-9]{64}$/u.test(expectedTargetHash))) {
+    throw new AppError('VALIDATION', '旧记忆的核对版本无效，请重新读取');
+  }
   const { project } = resolveScope(settings, workId, scope);
   if (!id || !hash) throw new AppError('VALIDATION', '候选或版本编号缺失，请刷新后重试');
   const data = await bridge(settings, '/v1/candidates/' + decision, {
     method: 'POST', signal, fetcher,
     body: { project, subject: SUBJECT, candidate_id: id, expected_hash: hash,
       ...(updatesExisting ? { supersedes_fact_id: supersedesFactId } : {}),
+      ...(expectedTargetHash ? { expected_target_hash: expectedTargetHash } : {}),
       ...(reason ? { note: reason } : {}) },
   });
   const result = data.result || {};
@@ -214,6 +218,7 @@ export async function listMemlayerFacts(settings, { workId, scope = 'work', offs
     project, mode: 'current', confirmed_only: 'true', include_inferred: 'false', limit, offset,
   });
   if (authorNotesOnly) params.set('subject', SUBJECT);
+  if (!countOnly) params.set('review_hash', 'true');
   if (search) params.set('filter', String(search).trim().slice(0, 200));
   const data = await bridge(settings, '/v1/facts?' + params, { signal, fetcher });
   if (!Array.isArray(data.facts) || !Number.isSafeInteger(data.total)) {
@@ -222,7 +227,8 @@ export async function listMemlayerFacts(settings, { workId, scope = 'work', offs
   const facts = data.facts
     .filter(row => row?.project === project && row.status === 'current' && row.confirmed === true)
     .map(row => ({ id: row.id, scope, scopeLabel: scopeLabel(scope), text: row.text,
-      source: (row.source_ids || []).join('、'), validFrom: row.valid_from }));
+      source: (row.source_ids || []).join('、'), validFrom: row.valid_from,
+      reviewHash: /^[a-f0-9]{64}$/u.test(row.review_hash) ? row.review_hash : undefined }));
   return { facts, total: data.total, offset, limit };
 }
 

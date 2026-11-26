@@ -23,6 +23,8 @@ import { creativeTaskMethods } from './creative-tasks.mjs';
 import { libraryMethods } from './library-migration.mjs';
 import { researchMethods } from './research.mjs';
 import { manuscriptReviewMethods } from './manuscript-review.mjs';
+import { manuscriptRulesPath, readManuscriptRules } from './manuscript-findings.mjs';
+import { modernIndustrialChecks, modernIndustrialPack, modernIndustrialRulePath, modernIndustrialRuleText, usesTangWording } from './writing-rule-packs.mjs';
 import { writingExtensionDraftMethods } from './writing-extension-drafts.mjs';
 import { bookReviewMethods } from './book-review.mjs';
 import { bookSemanticReviewMethods } from './book-semantic-review.mjs';
@@ -63,7 +65,7 @@ export class Workspace {
     let project = await jsonOr(file, null);
     if (!project) {
       const hasGate = this.externalGate && !!await this.store.read('_tools/gate.py');
-      project = { schema_version: 1, id: uid('work'), name: path.basename(this.store.root), created_at: stamp(), documents: {}, characters: [], sources: copy(DEFAULT_SOURCES), approvals: [], jobs: [], proposals: [], locks: [], checks: [], scenes: [], records: [], baselines: {}, externalChanges: {}, reader: {}, settings: { era: '', parentWork: '', gate: { enabled: hasGate, required: hasGate, script: '_tools/gate.py', python: '', defaultCard: '05-剧本/_本地协作/05_场次交接卡.md' }, ai: { enabled: false, baseUrl: '', model: '', modelList: [], maxOutputTokens: 4096, maxTokensPerJob: BASE_TOKEN_LIMIT, dailyTokenLimit: 300000 }, theme: 'light' } };
+      project = { schema_version: 1, id: uid('work'), name: path.basename(this.store.root), created_at: stamp(), documents: {}, characters: [], sources: copy(DEFAULT_SOURCES), approvals: [], jobs: [], proposals: [], locks: [], checks: [], scenes: [], records: [], baselines: {}, externalChanges: {}, reader: {}, settings: { era: '', parentWork: '', gate: { enabled: hasGate, required: hasGate, script: '_tools/gate.py', python: '', defaultCard: hasGate ? '05-剧本/_本地协作/05_场次交接卡.md' : '' }, ai: { enabled: false, baseUrl: '', model: '', modelList: [], maxOutputTokens: 4096, maxTokensPerJob: BASE_TOKEN_LIMIT, dailyTokenLimit: 300000 }, theme: 'light' } };
       project.reviewLifecycleVersion = 1;
       await atomicJson(file, project);
     }
@@ -278,9 +280,9 @@ export class Workspace {
     const { source } = await this.readResearchDiscussion({ documentId, sceneId, taskId, messageId: sourceId, authorOnly: true });
     return proposeMemlayerCandidate(this.project.settings.memlayer, { workId: this.project.id, scope, text, sourceId: source.messageId });
   }
-  async memlayerReview({ scope, decision, id, hash, text, supersedesFactId, reason }) {
+  async memlayerReview({ scope, decision, id, hash, text, supersedesFactId, expectedTargetHash, reason }) {
     const config = this.project.settings.memlayer;
-    const input = { workId: this.project.id, scope, decision, id, hash, supersedesFactId, reason };
+    const input = { workId: this.project.id, scope, decision, id, hash, supersedesFactId, expectedTargetHash, reason };
     if (decision !== 'replace') return reviewMemlayerCandidate(config, input);
     const rows = await listMemlayerCandidates(config, input);
     const original = rows.find(row => row.id === id);
@@ -493,6 +495,34 @@ export class Workspace {
     }
     return this.updateSettings({ writingModel: key, ai: { ...ai, model, modelList } });
   }
+  async installModernIndustrialRules() {
+    if (this.controllers.size) throw new AppError('BUSY', '请等当前模型任务结束后再配置本作品规则。');
+    const { rules, ruleHash } = await readManuscriptRules(this.store);
+    const { gate } = this.project.settings;
+    const gateSource = gate.enabled && await this.store.read(gate.script || '_tools/gate.py');
+    if (usesTangWording(rules) || gate.enabled && /架空唐|唐代|天宝/u.test(this.project.settings.era) ||
+        gateSource && /唐代用词/u.test(decode(gateSource).text)) {
+      throw new AppError('VALIDATION', '本作品已启用唐代规则。请在现代作品的设置中启用现代工业规则。');
+    }
+    const card = await this.store.read(modernIndustrialRulePath);
+    if (card && ruleHash && this.project.settings.writingRulePack === modernIndustrialPack &&
+        rules.ruleSources?.some(source => source.path === modernIndustrialRulePath)) return this.summary();
+    const fallback = this.documents.find(d => d.kind === 'rule' && /(?:文风卡|写作规则)\.md$/u.test(d.path));
+    const legacySources = (rules.ruleFiles?.length ? rules.ruleFiles : fallback ? [fallback.path] : [])
+      .map(path => ({ path, group: 'style', use: 'core', label: path.split('/').at(-1) }));
+    const ruleSources = rules.ruleSources?.length ? [...rules.ruleSources] : legacySources;
+    if (!ruleSources.some(source => source.path === modernIndustrialRulePath)) ruleSources.unshift({
+      path: modernIndustrialRulePath, group: 'style', use: 'core', label: '现代工业写作规则', unabridged: true,
+    });
+    const next = copy(this.project);
+    next.settings.writingStyle = 'modern';
+    next.settings.writingRulePack = modernIndustrialPack;
+    const nextRules = { wording: [], ...rules, wordingPolicy: 'work', preDeliveryStyleReview: true, preDeliveryChecks: modernIndustrialChecks, ruleSources };
+    const changes = [{ path: manuscriptRulesPath, expectedHash: ruleHash, text: JSON.stringify(nextRules, null, 2) + '\n' }];
+    if (!card) changes.push({ path: modernIndustrialRulePath, expectedHash: null, text: modernIndustrialRuleText });
+    await this.commit('启用现代工业写作规则', changes, next);
+    return this.summary();
+  }
   async updateSettings(input) {
     const next = copy(this.project);
     if (input.name !== undefined) next.name = cleanName(input.name);
@@ -557,8 +587,10 @@ export class Workspace {
     const evidence = e.editorial_evidence?.evidence;
     return managedBlock(base, `event-body-${e.id}`, evidence ? `> 事件依据：${evidence}\n\n${body}` : body);
   }
-  async checksFor({ documentId, ...options }) {
-    const d = await this.snapshotDocument(this.doc(documentId)); const result = decorateWording(await runGate(this.store, d, this.gateConfiguration(), options), this.project);
+  async checksFor({ documentId, expectedHash, ...options }) {
+    const d = await this.snapshotDocument(this.doc(documentId));
+    if (expectedHash && d.hash !== expectedHash) throw new AppError('CONFLICT', '草稿已有新版本，请核对当前稿件。');
+    const result = decorateWording(await runGate(this.store, d, this.gateConfiguration(), options), this.project);
     return this.exclusive(async () => { this.project.checks = [...this.project.checks.slice(-199), result]; await this.persist(); return result; });
   }
   async undoBatch(id) {

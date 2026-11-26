@@ -22,6 +22,7 @@ import { ConversationSources } from './ConversationSources';
 import { ImportTextButton, RevealSourceButton } from './LocalFileActions';
 import { DraftCleanup, DraftImport, isImportedLibraryText, newestImportFirst } from './DraftImport';
 import { WorkspaceActionReview } from './WorkspaceActionReview';
+import { BookDesignCard, BookDesignProgress, BookDecisionProposals } from './BookDesign';
 import './cowriting.css';
 
 type WorkTab = 'outline' | 'materials' | 'document' | 'trials' | 'review' | 'reference' | 'stages';
@@ -90,7 +91,9 @@ export default function Cowriting({ ctx, initialDocumentId, initialChapterNumber
   const call = useCallback((method: string, args: object = {}) => window.storyDesk.call(method, args, workId), [workId]);
   const manuscriptScope = (id: string): WritingScope => ctx.work.documents.find(d => d.id === id)?.kind === 'draft' ? 'draft' : 'chapter';
   const nextChapter = ctx.work.nextChapter ?? ctx.work.stats.latestFile + 1;
-  const [scope, setScope] = useState<WritingScope>(initialDocumentId ? manuscriptScope(initialDocumentId) : 'next');
+  const emptyBook = !ctx.work.documents.some(doc => ['plan', 'chapter', 'draft'].includes(doc.kind));
+  const [scope, setScope] = useState<WritingScope>(initialDocumentId ? manuscriptScope(initialDocumentId)
+    : emptyBook && !initialChapterNumber ? 'work' : 'next');
   const [chapterNumber, setChapterNumber] = useState(String(initialChapterNumber || nextChapter));
   const hiddenMaterials = ctx.work.hiddenChapterMaterials || [];
   const allDrafts = ctx.work.documents.filter(d => d.kind === 'draft' && d.chapter !== null)
@@ -119,6 +122,7 @@ export default function Cowriting({ ctx, initialDocumentId, initialChapterNumber
   const [viewKey, setViewKey] = useState('');
   const [source, setSource] = useState<SourceDocument | null>(null);
   const [task, setTask] = useState<CreativeTask | null>(null);
+  const bookGuide = task?.purpose === 'book' || !task && scope === 'work' && emptyBook;
   const taskRef = useRef<CreativeTask | null>(null);
   const taskQueue = useRef(Promise.resolve());
   const [tasks, setTasks] = useState<CreativeTask[]>([]);
@@ -302,7 +306,7 @@ export default function Cowriting({ ctx, initialDocumentId, initialChapterNumber
       if (tool && taskRef.current?.id === loaded.id) onCloseTool?.();
     } catch (e) { setError((e as Error).message); } finally { setTaskBusy(false); }
   }
-  async function createTask(goal = '', title = '', initialMessage = '', purpose: 'writing' | 'character' = 'writing') {
+  async function createTask(goal = '', title = '', initialMessage = '', purpose: 'writing' | 'character' | 'book' = bookGuide ? 'book' : 'writing') {
     if (!targetId) throw new Error('请先选择有效的创作范围');
     if (creatingTask.current) return creatingTask.current;
     setTaskBusy(true);
@@ -320,11 +324,11 @@ export default function Cowriting({ ctx, initialDocumentId, initialChapterNumber
     try { return await pending; } finally { creatingTask.current = null; setTaskBusy(false); }
   }
   async function ensureTask(goal = '') {
-    const subject = scope === 'stage' ? '阶段规划' : references[0]?.title || visibleFile?.title || targetTitle;
+    const subject = bookGuide ? '构思新书' : scope === 'stage' ? '阶段规划' : references[0]?.title || visibleFile?.title || targetTitle;
     const topic = [subject, goal.split(/[。！？\n]/u, 1)[0].slice(0, 28)].filter(Boolean).join(' · ');
     return taskRef.current || createTask(goal, topic.slice(0, 96));
   }
-  async function startConversation(flush = true, startScope: 'next' | 'stage' = 'next') {
+  async function startConversation(flush = true, startScope: 'next' | 'stage' | 'work' = emptyBook ? 'work' : 'next') {
     try {
       if (flush) {
         if (!await ctx.confirmDocumentLeave()) return;
@@ -900,6 +904,16 @@ export default function Cowriting({ ctx, initialDocumentId, initialChapterNumber
       ctx.notify(status === 'deleted' ? '对话已移入「已删除对话」' : '对话已恢复');
     } catch (failure) { ctx.notify((failure as Error).message, true); }
   }
+  const bookDecisions = view?.bookDecisions || [];
+  const bookProgress = <BookDesignProgress decisions={bookDecisions} disabled={running || !task || task.status === 'archived'}
+    onOpen={documentId => ctx.navigate({ page: 'reader', documentId })}
+    onSave={async (decision, input) => {
+      const saved = await ctx.act(() => call('reviseBookDecision', { taskId: task?.id, decisionId: decision.id,
+        expectedVersion: decision.version, ...input }), '构思已保存');
+      if (!saved) return false;
+      await reload();
+      return true;
+    }}/>;
   return <div className={`cowriting-page writing-studio focus-${focus} ${emptyConversation ? 'chat-empty' : ''}`} data-task-restoring={restoringTask ? 'true' : 'false'} aria-busy={restoringTask}>
     {sidebarHost && createPortal(<>
       <button className="studio-new-conversation" disabled={running} onClick={() => void startConversation()}><Icon name="edit" size={16}/>新对话</button>
@@ -921,6 +935,7 @@ export default function Cowriting({ ctx, initialDocumentId, initialChapterNumber
     </>, sidebarHost)}
     <div className="studio-heading"><div><h1 title={task?.goal || title}>{freshConversation && !task ? '新对话' : title}</h1></div>
       <div className="studio-actions">
+        {task?.purpose === 'book' && !emptyConversation && <button disabled={running} onClick={() => void startConversation(true, 'next')}>构思第一章</button>}
         <button disabled={running} onClick={() => { setShelf(false); setTaskPanel(value => !value); showDock(); }}
           aria-expanded={taskPanel}>创作任务</button>
         <button type="button" aria-expanded={focus !== 'chat'} onClick={() => focus === 'chat' ? openWorkspaceShelf() : setFocus('chat')}>
@@ -949,16 +964,21 @@ export default function Cowriting({ ctx, initialDocumentId, initialChapterNumber
       </small>}
       </div>
     </details>
+    {bookGuide && !emptyConversation && <details className="book-progress-details"><summary>新书设计进度
+      {bookDecisions.some(row => row.review.length) && <small> · 有构思待复核</small>}
+    </summary>{bookProgress}</details>}
     <div ref={layout} className="cowriting-layout" style={{ '--chat-width': `${chatWidth}%` } as React.CSSProperties}>
       <section className="cowriting-chat" aria-labelledby="cowriting-chat-heading"><h2 className="studio-visually-hidden" id="cowriting-chat-heading">写作对话</h2>
         <div className="cowriting-transcript" ref={transcript} aria-label="创作对话记录" tabIndex={0} onScroll={event => {
           const panel = event.currentTarget;
           followTranscript.current = panel.scrollHeight - panel.scrollTop - panel.clientHeight < 80;
         }}>
-          {emptyConversation && <div className="cowriting-empty"><h3>{task?.purpose === 'character' ? '讨论这个人物的人设' :
+          {emptyConversation && <div className="cowriting-empty"><h3>{bookGuide ? '从一个点子开始' : task?.purpose === 'character' ? '讨论这个人物的人设' :
             scope === 'next' ? '这一章，要往哪里推进？' : scope === 'stage' ? '这段剧情要推进到哪里？' : scope === 'volume' ? '这一卷要完成什么？' : scope === 'work' ? '从哪条主线开始梳理？' : '想怎么改，或怎么接着写？'}</h3>
-            <p>{task?.purpose === 'character' ? '可以讨论身份、动机或关系，把合适的思路整理为候选。' :
+            <p>{bookGuide ? '说一个画面、一个人物，或一句你想写的故事。助手会帮你整理，并问下一步最值得想清的事。' : task?.purpose === 'character' ? '可以讨论身份、动机或关系，把合适的思路整理为候选。' :
               `${selectedScope?.description}。讨论结果由你决定采用。`}</p>
+            {bookGuide && <>{bookProgress}
+              <button className="text-button" onClick={() => void startConversation(true, 'next')}>直接构思第一章</button></>}
             {task?.purpose !== 'character' && <><ConversationSources key={freshConversation ? 'new' : task?.id || 'initial'} ctx={ctx} disabled={running} references={references} scope={scope}
               onSelect={selectConversationSource} onScope={value => void selectPlanningScope(value)}/>
               {preferredDraft && <button className="text-button" disabled={running}
@@ -1040,6 +1060,29 @@ export default function Cowriting({ ctx, initialDocumentId, initialChapterNumber
                 if (doc) ctx.navigate({ page: 'reader', documentId: doc.id });
                 else ctx.notify('文件当前不可用，请检查本地路径。', true);
               }}/>}
+            {row.bookDesign?.length && !row.hiddenAt ? <BookDesignCard items={row.bookDesign} disabled={running || task?.status === 'archived'}
+              onOpen={path => {
+                const doc = ctx.work.documents.find(item => item.path === path);
+                if (!doc) { ctx.notify('文件当前不可用，请检查本地路径。', true); return; }
+                ctx.navigate(doc.kind === 'character'
+                  ? { page: 'characters', characterId: ctx.work.characters.find(person => person.primarySourceId === doc.id)?.id }
+                  : { page: 'reader', documentId: doc.id });
+              }}
+              onSave={async (itemId, text) => {
+                const saved = await ctx.act(() => call('applyBookDesign', { taskId: task?.id, messageId: row.id, itemId, text }), '设计已保存到本作品');
+                if (!saved) return false;
+                await reload();
+                return true;
+              }}/> : null}
+            {row.bookDecisionProposals?.length && !row.hiddenAt ? <BookDecisionProposals items={row.bookDecisionProposals}
+              decisions={bookDecisions} disabled={running || task?.status === 'archived'}
+              onSave={async (itemId, input) => {
+                const saved = await ctx.act(() => call('applyBookDecision', { taskId: task?.id, messageId: row.id, itemId, ...input }),
+                  '构思已记录');
+                if (!saved) return false;
+                await reload();
+                return true;
+              }}/> : null}
             {row.stagePlan && !row.hiddenAt && <StagePlanCard proposal={row.stagePlan} disabled={running || task?.status === 'archived'}
               onOpen={() => ctx.navigate({ page: 'plot', tab: 'plot_arc' })}
               onSave={async () => {

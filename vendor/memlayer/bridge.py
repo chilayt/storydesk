@@ -22,10 +22,10 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from memlayer import ReviewConflict, Store, now_iso, validate_event
+from memlayer import ReviewConflict, Store, fact_review_hash, now_iso, validate_event
 
 
-VERSION = "0.2.4"
+VERSION = "0.3.1"
 MAX_BODY = 1024 * 1024
 LOOPBACK = {"127.0.0.1", "localhost", "::1"}
 
@@ -143,8 +143,10 @@ class MutationWriter:
                             target = payload.get("supersedes_fact_id")
                             if not isinstance(target, str) or not target:
                                 raise ValueError("请选择要替换的旧记忆")
-                            result = self.store.approve_candidate(*args, supersedes_fact_id=target,
-                                                                  add_exception=operation == "candidate_exception")
+                            result = self.store.approve_candidate(
+                                *args, supersedes_fact_id=target, add_exception=operation == "candidate_exception",
+                                expected_target_hash=payload.get("expected_target_hash"),
+                            )
                         else:
                             review = self.store.approve_candidate if operation == "candidate_approve" else self.store.reject_candidate
                             result = review(*args)
@@ -398,7 +400,10 @@ class BridgeService:
                                              or search in item["text"].casefold()
                                              or any(search in source.casefold() for source in item["source_ids"])]
                                 items.sort(key=lambda item: (item["recorded_at"], item["id"]), reverse=True)
-                                result = {"ok": True, "facts": items[offset:offset + limit], "total": len(items)}
+                                page = items[offset:offset + limit]
+                                if params.get("review_hash") == ["true"]:
+                                    page = [{**item, "review_hash": fact_review_hash(item)} for item in page]
+                                result = {"ok": True, "facts": page, "total": len(items)}
                             self._send(200, result)
                         else:
                             self._send(200, {"ok": True, "facts": service.recall(

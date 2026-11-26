@@ -20,6 +20,7 @@ process.env.STORYDESK_BUNDLED_PYTHON = bundled.python;
 if (process.env.NOVEL_TEST_MODE) app.disableHardwareAcceleration();
 if (process.env.NOVEL_USER_DATA) app.setPath('userData', process.env.NOVEL_USER_DATA);
 else if (!app.isPackaged) app.setPath('userData', path.join(root, '.runtime'));
+else app.setPath('userData', path.join(app.getPath('appData'), '创作协作台开源版'));
 if (!app.requestSingleInstanceLock()) {
   app.exit(0);
   return;
@@ -235,7 +236,7 @@ app.whenReady().then(async () => {
   worker.on('error', e => { for (const p of pending.values()) p.reject(e); pending.clear(); publishRenderer(window, { type: 'fatal', message: '本地数据服务中断，请重启程序。' }); });
   window = new BrowserWindow({ width: 1480, height: 980, minWidth: 1080, minHeight: 720, backgroundColor: startupPalette.ground,
     ...(nativeCaption ? { titleBarStyle: 'hidden', titleBarOverlay: captionOptions(startupPalette) } : {}),
-    title: '创作协作台', show: !process.env.NOVEL_TEST_MODE, autoHideMenuBar: true, icon: path.join(root,'assets/workbench-mark.png'), webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, backgroundThrottling: false, offscreen: !!process.env.NOVEL_TEST_MODE } });
+    title: '章间', show: !process.env.NOVEL_TEST_MODE, autoHideMenuBar: true, icon: path.join(root,'assets/workbench-mark.png'), webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, backgroundThrottling: false, offscreen: !!process.env.NOVEL_TEST_MODE } });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event, url) => { if (!url.startsWith('storydesk://app/')) event.preventDefault(); });
   const trustedMediaFrame = (wc, details) => wc === window?.webContents && details.isMainFrame === true
@@ -288,7 +289,7 @@ app.whenReady().then(async () => {
           const picked = await dialog.showOpenDialog(window, { title: '选择新作品的存放位置', properties: ['openDirectory'] });
           if (!picked.canceled) {
             const target = path.join(picked.filePaths[0], args.name.trim()); await fs.mkdir(target);
-            for (const folder of ['正文', '人物', '设定', '资料']) await fs.mkdir(path.join(target, folder)); result = await openWork(target);
+            for (const folder of ['正文', '草稿章节', '人物', '设定', '资料']) await fs.mkdir(path.join(target, folder)); result = await openWork(target);
           } else result = null;
         } else if (method === 'newDemoWork') {
           const picked = await dialog.showOpenDialog(window, { title: '选择示例作品的保存位置', properties: ['openDirectory'] });

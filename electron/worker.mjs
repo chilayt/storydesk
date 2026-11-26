@@ -57,6 +57,9 @@ for (const method of ['applyManuscriptEdits', 'decideManuscriptWording']) mutati
 for (const method of ['confirmManuscriptIssue', 'undoManuscriptDecision', 'carryManuscriptWording']) mutating.add(method);
 mutating.add('setChapterMaterialVisibility');
 mutating.add('applyCowritingStagePlan');
+mutating.add('applyBookDesign');
+mutating.add('applyBookDecision');
+mutating.add('reviseBookDecision');
 const allowed = new Set([...mutating, 'readDocument', 'getCharacter', 'managedDiff', 'setDraft', 'clearDraft', 'checksFor', 'getRevision', 'generateRevision', 'cancelRevision', 'proposalEvidence', 'memoryContext', 'checkObligations','cancelObligationCheck','getObligationReport','obligationEvidence','obligationGate','obligationContext']);
 allowed.add('readSourceHistory');
 for (const method of ['reviewHistory','reviewRecord','reviewSource','approvedSource']) allowed.add(method);
@@ -68,6 +71,10 @@ allowed.add('previewLibrary');
 for (const method of ['searchResearch', 'listResearchCandidates', 'getResearchCandidate']) allowed.add(method);
 for (const method of ['getManuscriptReport', 'manuscriptReviewStates', 'checkManuscript', 'cancelManuscriptReview', 'searchManuscriptWording',
   'writingRuleCatalogue', 'previewWritingRule']) allowed.add(method);
+allowed.add('installModernIndustrialRules');
+mutating.add('installModernIndustrialRules');
+allowed.add('decideManuscriptFigure');
+mutating.add('decideManuscriptFigure');
 for (const method of ['listWritingExtensionDrafts', 'readWritingExtensionDraft', 'saveWritingExtensionDraft']) allowed.add(method);
 mutating.add('saveWritingExtensionDraft');
 for (const method of ['manuscriptProgress', 'getManuscriptHistory', 'getManuscriptSaveDiff']) allowed.add(method);

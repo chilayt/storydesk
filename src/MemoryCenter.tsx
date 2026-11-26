@@ -6,6 +6,8 @@ import { MemoryEditor, memoryKinds, memoryStates, memoryScope } from './MemoryEd
 import { MemoryTrace } from './MemoryTrace';
 import { ManagedReview } from './ManagedReview';
 
+const memlayerProjectUrl = 'https://github.com/chilayt/memlayer/blob/main/README.zh-CN.md';
+
 export default function MemoryCenter({ ctx, initialQuery = '' }: { ctx: AppContext; initialQuery?: string }) {
   const focusedCandidate = initialQuery.startsWith('candidate:') ? initialQuery.slice('candidate:'.length) : '';
   const memoryQuery = focusedCandidate ? '' : initialQuery;
@@ -13,9 +15,10 @@ export default function MemoryCenter({ ctx, initialQuery = '' }: { ctx: AppConte
   const [filter, setFilter] = useState(memoryQuery ? 'all' : 'active'), [query, setQuery] = useState(memoryQuery);
   const [shared, setShared] = useState<any>(null), [sharedScope, setSharedScope] = useState('work');
   const [sharedBusy, setSharedBusy] = useState(false), [sharedError, setSharedError] = useState('');
+  const [memlayerStatus, setMemlayerStatus] = useState<{ status: string; version?: string } | null>(null);
   const [sharedEdit, setSharedEdit] = useState<{ id: string; text: string } | null>(null);
   const [replacement, setReplacement] = useState<{
-    id: string; query: string; options: { id: string; text: string }[]; target: string; total: number;
+    id: string; query: string; options: { id: string; text: string; reviewHash?: string }[]; target: string; total: number;
   } | null>(null);
   const [rejection, setRejection] = useState<{ id: string; reason: string } | null>(null);
   const [sharedSearch, setSharedSearch] = useState('');
@@ -43,14 +46,22 @@ export default function MemoryCenter({ ctx, initialQuery = '' }: { ctx: AppConte
   useEffect(() => {
     if (focusedCandidate) void loadShared('work', 0, '');
   }, [focusedCandidate]);
+  useEffect(() => {
+    let current = true;
+    setMemlayerStatus(null);
+    void ctx.call('memlayerStatus').then(status => {
+      if (current) setMemlayerStatus(status);
+    }).catch(() => { if (current) setMemlayerStatus({ status: 'unavailable' }); });
+    return () => { current = false; };
+  }, [ctx.work.id, ctx.work.settings.memlayer?.enabled, ctx.work.settings.memlayer?.baseUrl]);
   async function openShared() {
     setTab('shared');
     if (!sharedBusy) await loadShared();
   }
-  async function reviewShared(item: any, decision: 'approve' | 'reject' | 'approve-replacement' | 'approve-exception', supersedesFactId?: string, reason?: string) {
+  async function reviewShared(item: any, decision: 'approve' | 'reject' | 'approve-replacement' | 'approve-exception', supersedesFactId?: string, reason?: string, expectedTargetHash?: string) {
     setSharedBusy(true); setSharedError('');
     try {
-      await ctx.call('memlayerReview', { scope: sharedScope, decision, id: item.id, hash: item.hash, supersedesFactId, reason });
+      await ctx.call('memlayerReview', { scope: sharedScope, decision, id: item.id, hash: item.hash, supersedesFactId, reason, expectedTargetHash });
       ctx.notify(decision === 'reject' ? '已拒绝，不会进入记忆' : decision === 'approve-replacement'
         ? '已替换，后续对话会使用新记忆' : decision === 'approve-exception'
           ? '已增加适用例外，其他情况继续沿用原约定' : '已确认，后续对话可以读到这条记忆');
@@ -108,7 +119,11 @@ export default function MemoryCenter({ ctx, initialQuery = '' }: { ctx: AppConte
         {m.status === 'superseded' ? <p className="muted small-text">已保留为旧版本，不再加载。</p> : <div className="actions"><button disabled={m.damaged || m.externalPending || m.unreviewedExternal} onClick={() => setEditing(m)}>{m.status === 'candidate' ? '核对并编辑' : '编辑'}</button>{m.status === 'confirmed' && <button onClick={() => changeStatus(m, 'disabled')}>停用</button>}{m.status === 'disabled' && <button onClick={() => setEditing({ ...m, status: 'confirmed' })}>检查后重新启用</button>}</div>}
       </section>)}
     </>}
-    {tab === 'shared' && <section className="panel"><h3>共享记忆（跨会话）</h3>
+    {tab === 'shared' && <section className="panel"><div className="panel-heading"><div><h3>共享记忆（跨会话）</h3>
+      <small className="muted">{memlayerStatus?.version ? 'MemLayer ' + memlayerStatus.version
+        : memlayerStatus?.status === 'disabled' ? '本作品未启用 MemLayer'
+        : memlayerStatus ? 'MemLayer 暂未连接' : '正在检测 MemLayer'}</small></div>
+      <button className="text-button" onClick={() => void ctx.act(() => ctx.call('openWebSource', { url: memlayerProjectUrl }))}>了解 MemLayer</button></div>
       <p className="muted small-text">创作对话中的长期偏好会先进入待核对候选。可以确认新增，也可以选一条旧记忆进行替换或增加例外。</p>
       {sharedError && <p className="notice danger">{sharedError}</p>}
       <div className="list-toolbar"><button disabled={sharedBusy} onClick={() => void loadShared()}>{sharedBusy ? '读取中…' : '刷新'}</button>
@@ -177,9 +192,9 @@ export default function MemoryCenter({ ctx, initialQuery = '' }: { ctx: AppConte
           {change.total > change.options.length && <p className="muted">可用关键词缩小结果范围。</p>}
           <div className="actions">
             <button className={item.suggestedAction === 'exception' ? 'primary' : undefined} disabled={sharedBusy || !old}
-              onClick={() => { if (old) void reviewShared(item, 'approve-exception', old.id); }}>确认增加例外</button>
+              onClick={() => { if (old) void reviewShared(item, 'approve-exception', old.id, undefined, old.reviewHash); }}>确认增加例外</button>
             <button className={item.suggestedAction === 'replace' ? 'primary' : undefined} disabled={sharedBusy || !old}
-              onClick={() => { if (old) void reviewShared(item, 'approve-replacement', old.id); }}>确认替换</button>
+              onClick={() => { if (old) void reviewShared(item, 'approve-replacement', old.id, undefined, old.reviewHash); }}>确认替换</button>
             {item.suggestedAction === 'duplicate' && <button className="primary" disabled={sharedBusy || !old}
               onClick={() => void reviewShared(item, 'reject', undefined, 'already_exists')}>保留已有记忆</button>}
             <button disabled={sharedBusy} onClick={() => setReplacement(null)}>返回候选</button>

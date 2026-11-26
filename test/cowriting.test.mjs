@@ -21,6 +21,126 @@ function authorPrompt(request) {
   return JSON.parse(typeof content === 'string' ? content : content.map(part => part.text).join(''));
 }
 
+test('draft delivery waits for clause review, applies one local repair, and protects useful observations', async t => {
+  const tea = '罗行用一双白净修长的手端来茶汤。';
+  const entrance = '谢连推门进来，青布袖口凝着一线白盐霜。';
+  const prose = [entrance, tea, '盏沿缺了一小块，罗行把缺口转向自己。'].join('\n\n');
+  const events = [], steps = [];
+  let mode = 'normal';
+  const f = await fixture('delivery-style-review', { notify: event => events.push(event), fetcher: async (_url, init) => {
+    const payload = authorPrompt(JSON.parse(init.body));
+    if (payload.review !== 'pre_delivery_style') {
+      steps.push('writing');
+      if (mode === 'inline') return completion({ text: prose });
+      if (mode === 'candidate') return completion({ tool: 'submit_draft', args: { text: prose } });
+      return completion({ text: tea, tool: 'create_writing_file', args: {
+        chapter: 27, kind: 'draft', title: '账灯', text: prose,
+      } });
+    }
+    steps.push('review');
+    assert.equal(f.workspace.documents.some(d => d.kind === 'draft'), ['inline', 'candidate'].includes(mode));
+    const forSentence = text => payload.segments.find(s => s.text === text).id;
+    return completion({ text: JSON.stringify({ checked: mode === 'broken' ? [] : payload.segments.map(s => s.id), findings: [
+      { segment: forSentence(tea), rule: 'action_modifier', verdict: 'remove', quote: tea,
+        detail: '白净修长', drop: '用一双白净修长的手', retain: '端来茶汤', reason: '修饰不影响递茶。' },
+      { segment: forSentence(entrance), rule: 'action_modifier', verdict: 'remove', quote: entrance,
+        detail: '青布', drop: '青布', retain: '推门进来', reason: '检验跨分句的误改保护。' },
+    ] }) });
+  } });
+  t.after(f.close);
+  await f.write('00-项目导航/稿件核对.json', JSON.stringify({ wording: [], preDeliveryStyleReview: true }));
+  await configure(f.workspace);
+  const documentId = 'outline_chapter_27';
+  const task = await f.workspace.createCreativeTask({ kind: 'next', documentId, title: '账灯' });
+  const scope = { documentId, taskId: task.id };
+  const sourceHash = (await f.workspace.getCowriting(scope)).sourceHash;
+  mode = 'broken';
+  const failed = await f.workspace.sendCowriting({ ...scope, sourceHash, message: '新建第二十七章草稿' });
+  assert.equal(failed.failure.code, 'AI_DELIVERY_COVERAGE');
+  assert.ok(!failed.messages.some(row => row.role === 'assistant' && row.text.includes(tea)));
+  assert.equal(f.workspace.documents.some(d => d.kind === 'draft'), false);
+  assert.ok(!events.some(event => event.preview?.includes(tea)));
+  steps.length = 0;
+  mode = 'normal';
+  const saved = await f.workspace.sendCowriting({ ...scope, sourceHash, message: '请写第二十七章草稿并保存' });
+  assert.equal(saved.status, 'completed', saved.error);
+  const reply = saved.messages.at(-1);
+  assert.deepEqual(steps, ['writing', 'review']);
+  assert.equal(reply.deliveryReview[0].passes, 1);
+  assert.equal(reply.deliveryReview[0].changes[0].before, tea);
+  assert.equal(reply.deliveryReview[0].changes[0].after, '罗行端来茶汤。');
+  assert.equal(reply.deliveryReview[0].pending[0].quote, entrance);
+  assert.match(await f.read(reply.artifact.path), /青布袖口凝着一线白盐霜。\n\n罗行端来茶汤。\n\n盏沿缺了一小块/u);
+  assert.ok(!reply.text.includes(tea));
+  mode = 'inline';
+  const inline = await f.workspace.sendCowriting({ ...scope, sourceHash, message: '请试写一段递茶的正文' });
+  assert.equal(inline.status, 'completed', inline.error);
+  assert.match(inline.messages.at(-1).text, /罗行端来茶汤。/u);
+  assert.ok(!inline.messages.at(-1).text.includes(tea));
+  assert.ok(!events.some(event => event.preview?.includes(tea)));
+  mode = 'candidate';
+  const chapter = chapterTwo(f.workspace);
+  const candidate = await f.workspace.sendCowriting({ documentId: chapter.id, sourceHash: chapter.hash,
+    mode: 'draft', message: '续写渡口递茶。' });
+  assert.equal(candidate.status, 'completed', candidate.error);
+  assert.equal(candidate.messages.at(-1).deliveryReview[0].passes, 1);
+  const variants = await f.workspace.getRevision({ id: candidate.latestRevisionId });
+  assert.match(variants.edits[0].after, /罗行端来茶汤。/u);
+  assert.ok(!variants.edits[0].after.includes(tea));
+});
+
+test('a long conversation branch can use opening decisions and look up earlier original wording', async t => {
+  const opening = '开篇只从渡船伙计的视角写。';
+  const oldAdvice = '当时提出用雾钟报黑潮，作者并未采纳。';
+  const original = '铜鱼牌放在船底第二块板下。';
+  const followup = '找到此前关于铜鱼牌的原话。';
+  const requests = [];
+  const f = await fixture('branch-history', { fetcher: async (_url, init) => {
+    const request = JSON.parse(init.body);
+    requests.push(request);
+    const tools = request.messages.filter(msg => msg.role === 'tool');
+    if (!tools.length) return completion({ tool: 'read_conversation_history', args: { query: '铜鱼牌' } });
+    const result = JSON.parse(tools[0].content);
+    if (tools.length === 1) return completion({ tool: 'read_conversation_history', args: { position: result.entries[0].position, textOffset: 0 } });
+    return completion({ text: '找到旧约定，可以接着讨论。' });
+  } });
+  t.after(f.close);
+  const w = f.workspace;
+  await configure(w);
+  const documentId = 'outline_chapter_25';
+  const parent = await w.createCreativeTask({ kind: 'next', documentId, title: '渡船' });
+  const target = { documentId, sceneId: null, taskId: parent.id };
+  const { sourceHash } = await w.getCowriting(target);
+  const row = (id, role, text, other = {}) => ({ id, role, text, mode: 'discuss', sourceHash, ...other });
+  const history = [
+    row('first', 'author', opening, { sourceHash: 'old' }),
+    row('first_reply', 'assistant', oldAdvice, { memorySignature: 'old' }),
+    row('middle', 'author', '甲'.repeat(2800) + original),
+    row('hidden', 'author', '铜鱼牌后来被隐藏的内容', { hiddenAt: '2026-11-26' }),
+    ...Array.from({ length: 12 }, (_, index) => row('later_' + index, index % 2 ? 'assistant' : 'author', '拖轮如何停靠 ' + index)),
+    row('after_fork', 'author', '铜鱼牌分支点之后的内容'),
+  ];
+  await f.write('_创作管理/共写/cowrite_outline_chapter_25.ending.' + parent.id + '.json',
+    JSON.stringify({ schema: 1, workId: w.project.id, ...target, status: 'completed', messages: history }));
+  const branch = await w.forkCowriting({ ...target, messageId: 'later_11' });
+  const result = await w.sendCowriting({ ...target, taskId: branch.id, sourceHash, message: followup });
+  assert.equal(result.status, 'completed', result.error);
+  assert.equal(requests.length, 3);
+  const payload = authorPrompt(requests[0]).activeSource.conversationHistory;
+  assert.equal(payload.forked, true);
+  assert.equal(payload.totalMessages, 15);
+  assert.equal(payload.canReadMore, true);
+  assert.deepEqual(payload.excerpts.slice(0, 2).map(item => [item.text, item.earlierContext]), [[opening, true], [oldAdvice, true]]);
+  assert.equal(payload.excerpts.at(-1).text, '拖轮如何停靠 11');
+  assert.ok(!JSON.stringify(payload).includes(original));
+  const [search, full] = requests.at(-1).messages.filter(msg => msg.role === 'tool').map(msg => JSON.parse(msg.content));
+  assert.equal(search.totalMatches, 1);
+  assert.equal(search.entries[0].text.endsWith(original), true);
+  assert.equal(full.text, '甲'.repeat(2800) + original);
+  assert.match(JSON.stringify(result.manifest.sections), /本对话原话/u);
+  assert.equal((await w.getCowriting(target)).messages.at(-1).id, 'after_fork');
+});
+
 test('new chat files persist in the right folders and branching or hiding messages preserves files and original history', async t => {
   const calls = [];
   const f = await fixture('agent-born-files', { fetcher: async (_url, init) => {

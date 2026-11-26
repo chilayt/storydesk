@@ -25,8 +25,8 @@ const root = await fs.mkdtemp(path.join(os.tmpdir(), 'storydesk-upgrade-'));
 const profile = path.join(root, 'profile');
 const work = path.join(root, '远灯录');
 const installation = path.join(root, 'installation');
-const exeName = '创作协作台开源版.exe';
-const installedApp = path.join(installation, exeName);
+const legacyApp = path.join(installation, '创作协作台开源版.exe');
+const currentApp = path.join(installation, '章间.exe');
 const compare = async file => fs.readFile(path.join(work, file), 'utf8');
 const runInstaller = installer => run(path.resolve(installer), ['/S', '/D=' + installation], {windowsHide:true, timeout:120000});
 const env = {...process.env, NOVEL_USER_DATA:profile, NOVEL_DEFAULT_WORK:work};
@@ -60,8 +60,8 @@ const ai = {enabled:true, baseUrl:'http://127.0.0.1:' + provider.address().port 
 let app;
 let page;
 const call = (method, args = {}, workId) => page.evaluate(input => window.storyDesk.call(...input), [method,args,workId]);
-async function open(expectedVersion, expectedMemoryVersion) {
-  app = await electron.launch({executablePath:installedApp, env, timeout:30000});
+async function open(executablePath, expectedVersion, expectedMemoryVersion) {
+  app = await electron.launch({executablePath, env, timeout:30000});
   page = await app.firstWindow();
   await page.getByRole('button', {name:'当前作品 远灯录', exact:true}).waitFor({timeout:20000});
   const state = await call('summary');
@@ -83,10 +83,11 @@ async function removeInstallation() {
   if (!uninstaller) return;
   await run(path.join(resolved, uninstaller), ['/S'], {windowsHide:true, timeout:120000});
   for (let i = 0; i < 100; i++) {
-    if (!(await fs.stat(installedApp).catch(error => {
-      if (error.code === 'ENOENT') return null;
+    const present = await Promise.all([legacyApp, currentApp].map(file => fs.stat(file).then(() => true, error => {
+      if (error.code === 'ENOENT') return false;
       throw error;
-    }))) return;
+    })));
+    if (present.every(value => !value)) return;
     await delay(100);
   }
   throw new Error('The uninstaller did not remove the installed binary.');
@@ -94,7 +95,7 @@ async function removeInstallation() {
 const checks = [];
 try {
   await runInstaller(previous);
-  const old = await open('2.0.14-beta.1', '0.2.3');
+  const old = await open(legacyApp, '2.0.14-beta.3', '0.2.4');
   assert.equal(old.documents.find(doc => doc.path === chapterPath)?.chapter, 1);
   assert.equal(old.documents.find(doc => doc.path === chapterPath)?.readOnly, true);
   assert.ok(old.characters.some(character => character.name === '沈禾'));
@@ -119,7 +120,7 @@ try {
 
   await runInstaller(current);
   const verifyPreserved = async () => {
-    const state = await open('2.0.14-beta.2','0.2.4');
+    const state = await open(currentApp, '2.1.0-beta.1', '0.3.1');
     assert.equal(state.id, old.id);
     assert.equal(state.documents.find(doc => doc.path === chapterPath)?.id, old.documents.find(doc => doc.path === chapterPath)?.id);
     assert.equal(state.documents.find(doc => doc.id === draft.id)?.hash, saved.document.hash);
@@ -146,6 +147,22 @@ try {
   await runInstaller(current);
   await verifyPreserved();
   checks.push('卸载后重装，继续从保留的目录读取同一份草稿、对话和记忆。');
+
+  const revisedPreference = '写远灯录的风灯场景时，先写人物动作，再写声音。';
+  await call('sendCowriting', { ...turn, sourceHash: saved.document.hash, message: revisedPreference, mode: 'discuss' }, old.id);
+  const revisedSource = (await call('getCowriting', turn, old.id)).messages.findLast(message => message.role === 'author').id;
+  const next = await call('memlayerPropose', { ...turn, scope: 'work', sourceId: revisedSource, text: revisedPreference }, old.id);
+  const oldFact = (await call('memlayerMemory', { search: sourceId }, old.id)).facts[0];
+  assert.match(oldFact.reviewHash, /^[a-f0-9]{64}$/u);
+  const review = { scope: 'work', decision: 'approve-replacement', id: next.id, hash: next.hash, supersedesFactId: oldFact.id };
+  await assert.rejects(call('memlayerReview', { ...review, expectedTargetHash: '0'.repeat(64) }, old.id));
+  assert.equal((await call('memlayerMemory', {}, old.id)).candidates.find(row => row.id === next.id)?.status, 'pending');
+  const replacement = await call('memlayerReview', { ...review, expectedTargetHash: oldFact.reviewHash }, old.id);
+  assert.ok(replacement.factId);
+  assert.equal((await call('memlayerMemory', {}, old.id)).facts[0].text, revisedPreference);
+  await call('memlayerRetract', { scope: 'work', factId: replacement.factId }, old.id);
+  assert.equal((await call('memlayerMemory', {}, old.id)).facts.length, 0);
+  checks.push('新版对照旧记忆版本，拒绝过期确认，能完成替换和撤回。');
   console.log(JSON.stringify({passed:true, checks},null,2));
 } catch (error) {
   console.error(error);

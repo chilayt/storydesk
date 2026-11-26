@@ -10,7 +10,7 @@ const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'storydesk-public-'));
 const hostProfile = path.join(parent, 'profile');
 const env = { ...process.env, NOVEL_USER_DATA: hostProfile };
 for (const key of ['ELECTRON_RUN_AS_NODE', 'NOVEL_TEST_MODE', 'NOVEL_DEFAULT_WORK', 'NOVEL_LOCAL_LAUNCHER', 'NOVEL_ASR_ROOT', 'NOVEL_PYTHON']) delete env[key];
-const exe = process.env.NOVEL_PACKAGED_EXE || path.resolve('release-public/win-unpacked/创作协作台开源版.exe');
+const exe = process.env.NOVEL_PACKAGED_EXE || path.resolve('release-public/win-unpacked/章间.exe');
 const A = 'https://a.invalid/v1', B = 'http://127.0.0.1:49283/v1';
 const demoKey = 'fixture-key-for-a';
 const checks = [];
@@ -58,10 +58,10 @@ try {
     try { health = await (await fetch(bridgeBase + '/health')).json(); } catch { await delay(150); }
   }
   assert.equal(health?.ok, true);
-  assert.equal(health.version, '0.2.4');
+  assert.equal(health.version, '0.3.1');
   assert.equal(health.semantic.enabled, false);
   assert.equal((await call('memlayerStatus', {}, workId)).status, 'empty');
-  checks.push('干净配置启动虚构示例，读到正文和人物；内置 MemLayer 0.2.4 自启，使用独立本地库。');
+  checks.push('干净配置启动虚构示例，读到正文和人物；内置 MemLayer 0.3.1 自启，使用独立本地库。');
 
   const showSettings = () => button('作品设置').click();
   const returnToStudio = () => button('返回创作空间').click();

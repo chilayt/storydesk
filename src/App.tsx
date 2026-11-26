@@ -108,7 +108,7 @@ export default function App() {
     window.storyDesk.call('appInfo').then(info => {
       setVersion(info.version);
       setCaptionHeight(info.nativeCaption ? info.captionHeight : 0);
-      document.title = `创作协作台 · ${info.version}`;
+      document.title = `章间 · ${info.version}`;
     }).catch(() => {});
     window.storyDesk.call('bootstrap').then(w => { if (!w.needsWork) assignWork(w); else if (w.error) notify(w.error, true); }).catch(e => notify(e.message, true)).finally(() => setLoading(false));
     let timer: ReturnType<typeof setTimeout>;
@@ -154,11 +154,11 @@ export default function App() {
     style={{ '--studio-caption-height': `${captionHeight || 0}px`,
       ...Object.fromEntries(Object.entries(palette).map(([role, color]) => [`--studio-${role}`, color])) } as React.CSSProperties}>
     {!!captionHeight && <div className="window-caption" aria-hidden="true"><img src={appMark} width="16" height="16" alt=""/>
-      <span>创作协作台</span>{version && <small>{version}</small>}</div>}
+      <span>章间</span>{version && <small>{version}</small>}</div>}
     {!navHidden && <button className="sidebar-scrim" aria-label="关闭导航" onClick={() => setNavHidden(true)}/>}
     <aside className="sidebar">
       <nav className="studio-rail" aria-label="作品导航">
-        <img className="app-mark" src={appMark} width="28" height="28" alt="创作协作台"/>
+        <img className="app-mark" src={appMark} width="28" height="28" alt="章间"/>
         <div className="rail-links">{navigation.map(item => <button key={item.nav.page} className={nav.page === item.nav.page ? 'rail-active' : ''}
           title={item.label} aria-label={item.label} onClick={() => navigate(item.nav)} disabled={!work || navigating || switchingWork}><Icon name={item.icon}/></button>)}</div>
         <div className="rail-bottom">

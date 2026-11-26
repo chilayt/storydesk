@@ -136,11 +136,9 @@ export async function findWritingStagePlans(workspace, { query = '', chapter = n
   return { candidates, matchCount: matches.length, matches: match ? [match] : [] };
 }
 
-export async function writingContext(workspace, document, range, sceneId, words = '', rulesSelection = null) {
+export async function writingContext(workspace, document, range, sceneId, words = '', rulesSelection = null, phase = 'writing') {
   const chapterScope = writingChapterScope(document) ?? document.draftChapterHint;
-  const writingRules = selectWritingRules(rulesSelection || await resolveWritingRules(workspace), chapterScope,
-    document.text.slice(range.start, range.end) + '\n' + words);
-  const heads = { ...writingRules.heads };
+  const heads = {};
   async function readPinned(relative, expected) {
     const bytes = await workspace.store.read(relative);
     if (!bytes || (expected && expected !== hash(bytes))) return null;
@@ -181,6 +179,12 @@ export async function writingContext(workspace, document, range, sceneId, words 
         : decided ? '作者已确认的设计 · 计划' : '规划参考',
       excerpt: text.slice(0, 900) });
   }
+  const scopedWords = document.text.slice(range.start, range.end) + '\n' + words;
+  const approvedDesign = chapterDesigns.find(d => d.id === approvedOutline?.documentId && d.hash === approvedOutline.sourceHash);
+  const design = sceneId === 'whole' ? outlines.find(o => o.path === approvedDesign?.path)?.excerpt : '';
+  const writingRules = selectWritingRules(rulesSelection || await resolveWritingRules(workspace, { phase }), chapterScope,
+    scopedWords, { phase, sceneHints: [scopedWords, range.label, design].filter(Boolean).join('\n') });
+  Object.assign(heads, writingRules.heads);
   const volumes = confirmedVolumeOutlines(workspace).filter(({ approval }) =>
     approval.fromChapter <= document.chapter && document.chapter <= approval.toChapter);
   for (const { approval, document: volume } of volumes) {

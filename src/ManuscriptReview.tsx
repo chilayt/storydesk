@@ -25,11 +25,18 @@ type Issue = {
 type Progress = { reportId: string; phase: 'machine' | 'semantic' | 'stopping'; total: number; checked: number; useAI: boolean };
 type SourcePreview = { issueId: string; title: string; line: number; quote: string; before: string; after: string;
   snapshot: boolean; excerptOnly: boolean };
+type Quota = { count: number; limit: number; status: 'over' | 'pending' | 'within' };
+type SpecialReview = {
+  chapter: Quota; scenes: (Quota & { id: string; name: string })[]; unscoped: boolean; missing: number; pending: number;
+  targets: { id: string; quote: string; label: string; line: number; reply?: { verdict: string; reason: string; quote: string } }[];
+  figures: { id: string; line: number; start: number; quote: string; subject: string; image: string; shared: string; dismissed: boolean }[];
+};
 type Report = {
   id: string; sourceHash: string; checked_at?: string; path: string; passages: number; paragraphs: number; stale: boolean; active: boolean;
   semanticStatus: string; model?: string; error?: string; issues: Issue[]; totals: Record<Category, number>;
   coverage: { id: string; line: number; checked: Category[] }[];
   gate: { status: string; output: string; gatePolicyVersion: number };
+  specialReview?: SpecialReview;
 };
 type SearchResult = { id: string; title: string; url: string; excerpt: string };
 type WordingCitation = { work: string; attribution: string; quote: string; sense: string };
@@ -48,6 +55,10 @@ const semanticLabels: Record<string, string> = {
   complete: 'AI 四项已核对', running: 'AI 正在分段核对', partial: 'AI 有未核对段落',
   not_run: 'AI 尚未核对', cancelled: 'AI 核对已停止',
 };
+const verdictLabels: Record<string, string> = {
+  issue: '问题成立', okay: '语境成立', pending: '依据不足', simile: '比喻', inference: '推测',
+};
+const quotaLabel = (quota: Quota) => `${quota.count}/${quota.limit} 处${quota.status === 'over' ? ' · 超额' : quota.status === 'pending' ? ' · 待核对' : ''}`;
 const plainLines = (value: string) => value.replace(/\r\n/gu, '\n');
 const changedText = (value: string | null | undefined, original: string) =>
   value === null || !!value?.trim() && plainLines(value).trim() !== plainLines(original).trim();
@@ -467,9 +478,39 @@ export default function ManuscriptReview({ ctx, nav, activeView }: { ctx: AppCon
       <div className="manuscript-review-status" role="status">
         <span>机检 <Badge status={report.gate.status}/></span>
         <span title={report.sourceHash}>{valid ? '当前保存版本' : '旧版'} · {report.sourceHash.slice(0, 8)}</span>
-        {!active && <span>{semanticLabels[report.semanticStatus] || semanticLabels.partial}</span>}
+        {!active && <span>{report.specialReview && report.semanticStatus === 'complete' ? '已收到 AI 核对回执'
+          : report.specialReview && report.semanticStatus === 'partial' ? '有段落或疑点待补查'
+          : semanticLabels[report.semanticStatus] || semanticLabels.partial}</span>}
         <span>{report.paragraphs} 段{report.passages !== report.paragraphs ? `，${report.passages} 个核对片段` : ''}{report.model ? ` · ${report.model}` : ''}</span>
       </div>
+      {report.specialReview && <details className="manuscript-wording-group">
+        <summary>比喻与疑点回执 · 本章 {quotaLabel(report.specialReview.chapter)}
+          {report.specialReview.missing > 0 && ` · ${report.specialReview.missing} 条漏答`}
+          {report.specialReview.pending > 0 && ` · ${report.specialReview.pending} 条待核对`}</summary>
+        {report.specialReview.scenes.map(scene => <p key={scene.id}>{scene.name} · {quotaLabel(scene)}</p>)}
+        {report.specialReview.unscoped && <p className="muted">部分正文没有明确场界，场次配额待核对。</p>}
+        {report.specialReview.figures.map(figure => <div key={figure.id}>
+          <p>第 {figure.line} 行 · {figure.quote}</p>
+          <p className="muted">{figure.subject} / {figure.image} · {figure.shared}</p>
+          {doc && <button type="button" onClick={() => void previewSource(figure.id, doc.id, report.sourceHash,
+            figure.line, figure.quote, doc.title, figure.start)}>定位原文</button>}
+          {doc && <button type="button" disabled={!valid || active || busy} onClick={async () => {
+            setBusy(true); setError('');
+            try {
+              setReport(await ctx.call('decideManuscriptFigure', { documentId: doc.id, reportId: report.id,
+                sourceHash: report.sourceHash, figureId: figure.id, dismiss: !figure.dismissed }));
+            } catch (e) { setError((e as Error).message); }
+            finally { setBusy(false); }
+          }}>{figure.dismissed ? '恢复计数' : '判为非比喻'}</button>}
+          {sourcePreview?.issueId === figure.id && <section className="manuscript-source-preview" aria-label="比喻原文定位">
+            <p>{sourcePreview.before}<mark>{sourcePreview.quote}</mark>{sourcePreview.after}</p>
+          </section>}
+        </div>)}
+        {report.specialReview.targets.map(row => <p key={row.id} title={row.label}>
+          第 {row.line} 行 · {row.reply?.quote || row.quote} · {row.reply ? verdictLabels[row.reply.verdict] : '未收到回执'}
+          {row.reply && ` · ${row.reply.reason}`}
+        </p>)}
+      </details>}
       {category === 'wording' && <details className="manuscript-wording-group">
         <summary>已放行 · {allowedWords.length} 处</summary>
         {allowedWords.length ? allowedWords.map(issue => <div key={issue.id}>{issue.term || issue.quote} · 第 {issue.line} 行{issue.decision && ` · ${scopes[issue.decision.scope]}`}</div>) :

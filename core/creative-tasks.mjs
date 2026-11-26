@@ -80,7 +80,9 @@ export const creativeTaskMethods = {
   async getCreativeTask({ id }) { return readCreativeTask(this, id); },
   async createCreativeTask({ kind, documentId, sceneId = null, title = '', goal = '', purpose = 'writing' }) {
     if (!kinds.has(kind)) throw new AppError('VALIDATION', '创作任务类型无效');
-    if (!['writing', 'character'].includes(purpose)) throw new AppError('VALIDATION', '创作任务用途无效');
+    if (!['writing', 'character', 'book'].includes(purpose) || purpose === 'book' && kind !== 'work') {
+      throw new AppError('VALIDATION', '创作任务用途无效');
+    }
     text(title, 100, '任务标题'); text(goal, 2500, '任务目标');
     const source = await taskSource(this, documentId), planning = planningTarget(documentId);
     if (kind === 'chapter' ? !!planning : !planning || planning.type !== ({ next: 'chapter', stage: 'stage', volume: 'volume', work: 'work' })[kind]) {
@@ -92,7 +94,7 @@ export const creativeTaskMethods = {
     if (planning && sceneId) throw new AppError('VALIDATION', '大纲任务不使用场景范围');
     const record = { schema: 1, id: uid('creative'), workId: this.project.id, kind, documentId, sceneId,
       title: title.trim() || source.title, goal: goal.trim(), notes: '', phase: 'plan', status: 'active',
-      annotations: [], referenceIds: [], created_at: stamp(), updated_at: stamp(), ...(purpose === 'character' ? { purpose } : {}) };
+      annotations: [], referenceIds: [], created_at: stamp(), updated_at: stamp(), ...(purpose !== 'writing' ? { purpose } : {}) };
     const body = JSON.stringify(record, null, 2), next = structuredClone(this.project);
     next.creativeTasks ||= [];
     next.creativeTasks.push({ id: record.id, title: record.title, kind, documentId, sceneId, status: record.status,

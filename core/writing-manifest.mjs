@@ -166,7 +166,8 @@ export function writingManifest(workspace, source, range, context, { task, words
   for (const hook of input.continuity.hooks) add('hook', hook.title,
     [`状态：${hookStatus[hook.status] || hook.status}`, hook.note, hook.target ? `预期范围：${hook.target}` : ''].filter(Boolean).join('\n\n'), '当前适用伏笔', '', '避免遗漏未收事项');
   for (const rule of context.writingRules.sources) {
-    const status = rule.use === 'examples' ? '校订判例 · 按词查阅'
+    const status = rule.use === 'scene' ? '写前规则 · 本场适用'
+      : rule.use === 'examples' ? '校订判例 · 按词查阅'
       : rule.use === 'lookup' ? '作品词表 · 按词查阅' : rule.excerpted ? '当前规则 · 摘录' : '当前规则';
     add('rule', rule.title, rule.excerpt, status, rule.path, '使用本轮稿件和任务范围选取');
   }
@@ -181,6 +182,11 @@ export function writingManifest(workspace, source, range, context, { task, words
   for (const item of input.memlayerRecall || []) {
     add('memory', `Memlayer · ${item.scope}`, item.text, '本轮读取的已确认记忆', '', item.evidence.length ? `出处编号 · ${item.evidence.join('、')}` : `记忆编号 · ${item.id}`);
     sections.at(-1).factId = item.id;
+  }
+  if (input.conversationHistory) {
+    const { totalMessages, excerpts, canReadMore } = input.conversationHistory;
+    add('lookup', '本对话原话', `本轮随请求提供 ${excerpts.length} 条历史消息摘录，共 ${totalMessages} 条可查。`,
+      canReadMore ? '还有原话可按需查阅' : '已提供全部可用消息');
   }
   for (const lookup of lookups) add('lookup', lookup.title, JSON.stringify(lookup.result, null, 2).slice(0, 2200), '本轮工具实际查阅');
   const missing = [...(context.omitted || [])];

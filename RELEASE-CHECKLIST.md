@@ -1,5 +1,13 @@
 # 发布验收
 
+## 2.1.0-beta.1（章间）
+
+- [x] 194 项核心测试通过。长对话分支保留开头并可查询旧消息，交稿前核对按作品启用。
+- [x] Windows x64 打包版通过新书构思、阅读编辑、模型配置和 MemLayer 复验。模型请求使用本机模拟接口，作品与记忆使用虚构数据。
+- [x] 用已发布的 `2.0.14-beta.3` 安装包做原位升级及卸载重装。确认作品编号、草稿版本、对话、模型配置和旧记忆保留，旧记忆仍能在新会话召回。
+- [x] 内置 MemLayer 0.3.1。核对时传递旧记忆版本，旧版本不匹配时保留待核对候选。
+- [x] 公开源码与安装包通过隐私检查，生成 SHA-256。安装包未签名。
+
 ## 2.0.14-beta.3
 
 - [x] 189 项核心测试通过。公开版接受直引号，作品可显式启用中文双引号检查。旧版用词裁定文件仍可读取和更新。
@@ -19,7 +27,7 @@
 
 ## 复验命令
 
-使用 `npm test` 跑核心测试。`npm run test:connections`、`npm run test:memory` 和 `npm run test:reader` 使用 `NOVEL_PACKAGED_EXE` 指定打包版可执行文件。安装升级回归使用 `node scripts/public-upgrade-smoke.mjs <beta.1安装包> <beta.2安装包>`，在没有安装开源版的隔离 Windows 测试环境运行。使用 `node scripts/audit-public.mjs <产物目录>` 检查文件并生成 SHA-256。
+使用 `npm test` 跑核心测试。`npm run test:connections`、`npm run test:memory` 和 `npm run test:reader` 使用 `NOVEL_PACKAGED_EXE` 指定打包版可执行文件。在没有安装开源版的 Windows 测试环境运行 `node scripts/public-upgrade-smoke.mjs <2.0.14-beta.3安装包> <2.1.0-beta.1安装包>`。使用 `node scripts/audit-public.mjs <产物目录>` 检查文件并生成 SHA-256。
 
 ## 后续迭代
 
